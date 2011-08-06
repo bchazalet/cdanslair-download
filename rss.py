@@ -7,7 +7,7 @@ import urllister
 from xml.dom import minidom
 
 def main():
-	#download new RSS file from website
+	#download new RSS file from websit e
 	print "Fetching RSS"
 	rss_url = "http://feeds.feedburner.com/france5/cdanslair?format=xml"
 	try:

@@ -53,7 +53,8 @@ def main():
 		try:
 			ep_sock = urllib.urlopen(ep[1])	
 		except IOError:
-			print "Could not fetch the page. Skipping to next one."
+			#print "Could not fetch the page. Skipping to next one."
+			os.write(1,"#")
 			continue
 		parser = urllister.URLLister()
 		parser.feed(ep_sock.read())
@@ -67,6 +68,7 @@ def main():
 				os.write(1,".")
 				break # there is only one mms link per page
 	os.write(1,"\n");
+
 	#Start mplayer
 	#How the url looks like
 	#mms://a533.v55778.c5577.e.vm.akamaistream.net/7/533/5577/42c40fe4/lacinq.download.akamai.com/5577/internet/cdanslair/cdanslair_20110801.wmv
@@ -84,7 +86,7 @@ def main():
 			cmd = "mplayer -dumpstream %s -dumpfile %s" % (media[1],file_name)
 			os.system(cmd);
 		else:
-			print media[3] + " .File already present. No need for downloading."
+			print media[0] + ", " + media[3] + "\n\tFile already present. No need for downloading."
 
 def isFileAlreadyHere(filename):
 	for aFile in os.listdir("."):

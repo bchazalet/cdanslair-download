@@ -80,6 +80,7 @@ def main():
 			print media[4] #desc
 			file_name = file_name # + "_" + shortDescForFileName(media[3])
 			print file_name
+			#TODO handle mplayer "connection refused" --> we need to delete the file
 			cmd = "mplayer -dumpstream %s -dumpfile %s" % (media[1],file_name)
 			os.system(cmd);
 		else:
@@ -87,7 +88,8 @@ def main():
 
 def isFileAlreadyHere(filename):
 	for aFile in os.listdir("."):
-		if aFile == filename:
+		#TRunking the file name to the original file name ie cdanslair_YYYYMMDD
+		if aFile[:18] == filename:
 			return True
 	#If no match found the file is no present in the folder
 	return False

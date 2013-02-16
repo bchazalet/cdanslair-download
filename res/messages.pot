@@ -1,0 +1,61 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2013-02-16 17:58+GMT\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: ENCODING\n"
+"Generated-By: pygettext.py 1.5\n"
+
+
+#: download-cdanslair.py:23
+msgid "Downloads the newly available cdanslair episodes."
+msgstr ""
+
+#: download-cdanslair.py:24
+msgid "The directory where to store the media files"
+msgstr ""
+
+#: download-cdanslair.py:33
+msgid "Directory %s does not exist. Exiting."
+msgstr ""
+
+#: download-cdanslair.py:40
+msgid "Could not fetch the RSS feed. Exiting."
+msgstr ""
+
+#: download-cdanslair.py:44
+msgid "Checking and fetching (%s): "
+msgstr ""
+
+#: download-cdanslair.py:75
+msgid "The process has been interrupted --> renaming the file to %s"
+msgstr ""
+
+#: download-cdanslair.py:78
+msgid "Oops, something unexpected happened while running mplayer"
+msgstr ""
+
+#: download-cdanslair.py:81
+msgid " %s, %s%sFile already present. No need for downloading."
+msgstr ""
+
+#: download-cdanslair.py:84
+msgid "All medias have already been downloaded, nothing to do."
+msgstr ""
+
+#: download-cdanslair.py:86
+msgid "Done."
+msgstr ""
+
+#: download-cdanslair.py:115
+msgid "Could not find the id-video link in the page. This probably means that the video has not been published yet."
+msgstr ""
+

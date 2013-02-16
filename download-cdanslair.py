@@ -1,5 +1,8 @@
 #!/usr/bin/python -tt
 import sys
+import gettext
+import locale
+import logging
 import urllib2
 import datetime
 import subprocess
@@ -17,8 +20,8 @@ RSS_URL = "http://feeds.feedburner.com/france5/Gxsc?format=xml"
 
 def main():
   # Parse command line
-  parser = argparse.ArgumentParser(description='Downloads the newly available cdanslair episodes.')
-  parser.add_argument('-d', '--dir', action='store', metavar='directory', default='.', help='The directory where to store the media files')
+  parser = argparse.ArgumentParser(description=_('Downloads the newly available cdanslair episodes.'))
+  parser.add_argument('-d', '--dir', action='store', metavar='directory', default='.', help=_('The directory where to store the media files'))
   args = parser.parse_args()
 
   global work_folder
@@ -27,18 +30,18 @@ def main():
     if(os.path.exists(args.dir)):
       work_folder = os.path.abspath(args.dir)
     else:
-      print "Directory " + args.dir + " does not exist. Exiting."
+      print _("Directory %s does not exist. Exiting.") % args.dir
       exit()
 
   # Downloading latest RSS file
   #print "Fetching RSS"
   episodes = parseRssFeed(RSS_URL)
   if(episodes == -1):
-    print "Could not fetch the RSS feed. Exiting."
+    print _("Could not fetch the RSS feed. Exiting.")
     exit()
 
   toDownload = []
-  os.write(1,"Checking and fetching (" + str(len(episodes))+ "): ")
+  os.write(1,_("Checking and fetching (%s): ") % str(len(episodes)))
   for ep in episodes:
     #For some reasons, fetching the URL takes time (slow server response), so we should check already if we already have the file.
     if not isFileAlreadyHere(ep.filename):
@@ -69,18 +72,18 @@ def main():
         process.wait()
       except KeyboardInterrupt: #Ctrl-C
         process.terminate()
-        print "The process has been interrupted --> renaming the file to NOT FINISHED"
+        print _("The process has been interrupted --> renaming the file to %s") % "NOT FINISHED"
         shutil.move(fullPath, work_folder + "/" + "NOT_FINISHED_" + media.filename)
       except:
-        print "Oops, something unexpected happened while running mplayer"
+        print _("Oops, something unexpected happened while running mplayer")
       #print "Mplayer return code: " + str(process.returncode)
     else:
-      print media.date + ", " + media.title + "\n\tFile already present. No need for downloading."
+      print _(" %s, %s%sFile already present. No need for downloading.") % (media.date, media.title, '\n\t')
 
   if(len(toDownload) == 0):
-    print "All medias have already been downloaded, nothing to do."
+    print _("All medias have already been downloaded, nothing to do.")
   else:
-    print "Done."
+    print _("Done.")
 
 def isFileAlreadyHere(filename):
   for aFile in os.listdir(work_folder):
@@ -109,7 +112,7 @@ def clickExtractAndBuildUrl(ep_url):
       if(wmvResource == -1 or wmvResource == None):
         return -1
       return MMS_BEGINNING + wmvResource
-  print "Could not find the id-video link in the page. This probably means that the video has not been published yet."
+  print _("Could not find the id-video link in the page. This probably means that the video has not been published yet.")
   return -1
 
 def getContentOfMeta(url, metaId):
@@ -160,6 +163,7 @@ def parseRssFeed(rss_url):
   return episodes
 
 class Episode():
+  '''represents an Episode'''
   #date, link, title, desc
   def __init__(self, url, date):
     self.url = url
@@ -176,5 +180,25 @@ class Episode():
     extractedDate = extractedDate.strftime("%Y%m%d")
     self.filename = u"cdanslair_%s" % extractedDate
 
+def init_localization():
+  '''prepare l10n'''
+  locale.setlocale(locale.LC_ALL, '') # use user's preferred locale
+  # take first two characters of country code
+  loc = locale.getlocale()
+  filename = os.path.join(base_dir, "res/messages_%s.mo" % loc[0][0:2])
+ 
+  try:
+    logging.debug( "Opening message file %s for locale %s", filename, loc[0] )
+    trans = gettext.GNUTranslations(open( filename, "rb" ) )
+  except IOError:
+    logging.debug( "Locale not found. Using default messages" )
+    print  "Locale not found. Using default messages"
+    trans = gettext.NullTranslations()
+ 
+  trans.install()
+
 if __name__ == '__main__':
+  global base_dir
+  base_dir = os.path.normpath(os.path.dirname(os.path.realpath(sys.argv[0])))
+  init_localization()
   main()

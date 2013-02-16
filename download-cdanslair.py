@@ -41,7 +41,8 @@ def main():
     exit()
 
   toDownload = []
-  os.write(1,_("Checking and fetching (%s): ") % str(len(episodes)))
+  tmp_s = _("Checking and fetching (%d): ") % len(episodes)
+  os.write(1,tmp_s)
   for ep in episodes:
     #For some reasons, fetching the URL takes time (slow server response), so we should check already if we already have the file.
     if not isFileAlreadyHere(ep.filename):
@@ -175,10 +176,20 @@ class Episode():
     self.setFilename()
 
   def setFilename(self):
-    extractedDate = datetime.datetime.strptime(self.date, "%a, %d %b %Y %H:%M:%S +0000") # <pubDate>Thu, 03 Nov 2011 23:00:00 +0000</pubDate>
-    extractedDate = extractedDate + datetime.timedelta(days=1) # The pubDate of this RSS feed is one day behind (i.e., published the day before)
-    extractedDate = extractedDate.strftime("%Y%m%d")
-    self.filename = u"cdanslair_%s" % extractedDate
+    # print "User locale is:" + locale.getlocale(locale.LC_TIME)[0]
+    # Change time locale to US for rss date parsing
+    locale.setlocale(locale.LC_TIME,("en_US","utf8"))
+    try:
+      extractedDate = datetime.datetime.strptime(self.date, "%a, %d %b %Y %H:%M:%S +0000") # <pubDate>Thu, 03 Nov 2011 23:00:00 +0000</pubDate>
+      extractedDate = extractedDate + datetime.timedelta(days=1) # The pubDate of this RSS feed is one day behind (i.e., published the day before)
+      extractedDate = extractedDate.strftime("%Y%m%d")
+      self.filename = u"cdanslair_%s" % extractedDate
+    except ValueError:
+      #extractedDate = datetime.datetime.strptime(self.date[5:-15], "%d %b %Y")
+      print "Could not parse date properly %s" % self.date
+      self.filename = u"cdanslair_%s" % self.date[5:-15]
+    # Reverts locale back to user locale
+    locale.resetlocale(locale.LC_TIME)
 
 def init_localization():
   '''prepare l10n'''

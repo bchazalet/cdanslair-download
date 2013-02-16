@@ -5,6 +5,7 @@ import datetime
 import subprocess
 import shutil
 import os
+import argparse
 # My own modules
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), 'pym'))
 import urllister
@@ -12,15 +13,26 @@ import metataglister
 from xml.dom import minidom
 
 # Where the downloaded medias are stored
-WORK_FOLDER = "/home/bchazalet/cdanslair" 
+RSS_URL = "http://feeds.feedburner.com/france5/Gxsc?format=xml"
 
 def main():
-  #download new RSS file from website
+  # Parse command line
+  parser = argparse.ArgumentParser(description='Downloads the newly available cdanslair episodes.')
+  parser.add_argument('-d', '--dir', action='store', metavar='directory', default='.', help='The directory where to store the media files')
+  args = parser.parse_args()
+
+  global work_folder
+  # Checking work folder given in argument
+  if(args.dir):
+    if(os.path.exists(args.dir)):
+      work_folder = os.path.abspath(args.dir)
+    else:
+      print "Director does not exist. Exiting."
+      exit()
+
+  # Downloading latest RSS file
   print "Fetching RSS"
-  #rss_url = "http://feeds.feedburner.com/france5/cdanslair?format=xml"
-  #rss_url = "http://www.pluzz.fr/c-dans-l-air/rss"
-  rss_url = "http://feeds.feedburner.com/france5/Gxsc?format=xml"
-  episodes = parseRssFeed(rss_url)
+  episodes = parseRssFeed(RSS_URL)
   if(episodes == -1):
     exit()
 
@@ -50,14 +62,14 @@ def main():
       media.filename = media.filename + u"_" +  media.title.replace(" ", "-")
       #print media.desc #desc # do not display unless we can parse it before (html)
       #TODO handle mplayer "connection refused" --> we need to delete the file
-      fullPath = u"%s" % (WORK_FOLDER + "/" + media.filename)
+      fullPath = u"%s" % (work_folder + "/" + media.filename)
       try:      
         process = subprocess.Popen(["mplayer", "-dumpstream", media.mediaLink, "-dumpfile", fullPath], shell=False) #os.system(cmd) --> issue with unicode chars
         process.wait()
       except KeyboardInterrupt: #Ctrl-C
         process.terminate()
         print "The process has been interrupted --> renaming the file to NOT FINISHED"
-        shutil.move(fullPath, WORK_FOLDER + "/" + "NOT_FINISHED_" + media.filename)
+        shutil.move(fullPath, work_folder + "/" + "NOT_FINISHED_" + media.filename)
       except:
         print "Oops, something unexpected happened while running mplayer"
       #print "Mplayer return code: " + str(process.returncode)
@@ -70,7 +82,7 @@ def main():
     print "Done."
 
 def isFileAlreadyHere(filename):
-  for aFile in os.listdir(WORK_FOLDER):
+  for aFile in os.listdir(work_folder):
     #TRunking the file name to the original file name ie cdanslair_YYYYMMDD
     if aFile[:18] == filename:
       return True
@@ -123,7 +135,7 @@ def parseRssFeed(rss_url):
   try:
     url_sock = urllib2.urlopen(rss_url)
   except IOError:
-    print "Could not fetch the RSS feed. Closing."
+    print "Could not fetch the RSS feed. Exiting."
     return -1;
   xmldoc = minidom.parse(url_sock)  
   url_sock.close()
@@ -160,9 +172,6 @@ class Episode():
     self.setFilename()
 
   def setFilename(self):
-    #last_slash = self.mediaLink.rfind("/",0,len(self.mediaLink));
-    #self.filename = self.mediaLink[last_slash+1+7:-4] #without the extension
-    #extractedDate = self.url[33:44].replace("-","");
     extractedDate = datetime.datetime.strptime(self.date, "%a, %d %b %Y %H:%M:%S +0000") # <pubDate>Thu, 03 Nov 2011 23:00:00 +0000</pubDate>
     extractedDate = extractedDate + datetime.timedelta(days=1) # The pubDate of this RSS feed is one day behind (i.e., published the day before)
     extractedDate = extractedDate.strftime("%Y%m%d")
@@ -170,21 +179,3 @@ class Episode():
 
 if __name__ == '__main__':
   main()
-
-##### OLD STUFFS THAT I DON'T WANT TO LOSE #####
-
-# Not in use anymore, now using the meta tag
-#def getMmsLinkFromUrl(ep_url):
-# try:
-#   ep_sock = urllib2.urlopen(ep_url) 
-# except IOError:
-#   #print "Could not fetch the page. Skipping to next one."
-#   return -1;
-# parser = urllister.URLLister()
-# parser.feed(ep_sock.read())
-# ep_sock.close()
-# parser.close()
-# for url in parser.urls:
-#   if url[:3] == "mms":
-#     #medias.append((ep[0],url,file_name,ep[2],ep[3]))
-#     return url # break # there is only one mms link per page

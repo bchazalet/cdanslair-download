@@ -22,6 +22,7 @@ def main():
   # Parse command line
   parser = argparse.ArgumentParser(description=_('Downloads the newly available cdanslair episodes.'))
   parser.add_argument('-d', '--dir', action='store', metavar='directory', default='.', help=_('The directory where to store the media files'))
+  parser.add_argument('-f', '--force', action="store_true", help=_('Force new download for incomplete files'))
   args = parser.parse_args()
 
   global work_folder
@@ -43,8 +44,10 @@ def main():
   tmp_s = _("Checking and fetching (%d): ") % len(episodes)
   os.write(1,tmp_s)
   for ep in episodes:
-    # For some reasons, fetching the URL takes time (slow server response), so we should check already if we already have the file.
-    if not isFileAlreadyHere(ep.filename):
+    # For some reasons, fetching the URL takes time (slow server response),
+    # so we should check first whether we already have the file.
+    # If --force-inc option is selected and file not completed, we fetch the link too
+    if not isFileAlreadyHere(ep.filename) or (args.force and isFileComplete(ep.filename)):
       ep.fetchMediaLink()
       if(ep.mediaLink == -1):
         os.write(1,"?")
@@ -58,35 +61,49 @@ def main():
 
   # Start mplayer
   for media in toDownload:
-    # Check if file is already here (in the folder)
-    # TODO check its size
-    if not isFileAlreadyHere(media.filename):
-      print media.title #title
-      media.filename = media.filename + u"_" +  media.title.replace(" ", "-")
-      # TODO handle mplayer "connection refused" --> we need to delete the file
-      fullPath = os.path.join(work_folder, (u"%s" % media.filename))
-      try:      
-        process = subprocess.Popen(["mplayer", "-dumpstream", media.mediaLink, "-dumpfile", fullPath], shell=False) #os.system(cmd) --> issue with unicode chars
-        process.wait()
-      except KeyboardInterrupt: #Ctrl-C
-        process.terminate()
-        print _("The process has been interrupted --> renaming the file to %s") % "NOT FINISHED"
-        shutil.move(fullPath, work_folder + "/" + "NOT_FINISHED_" + media.filename)
-      except:
-        print _("Oops, something unexpected happened while running mplayer")
-    else:
-      print _(" %s, %s%sFile already present. No need for downloading.") % (media.date, media.title, '\n\t')
+    # Check if file is already here or if it is incomplete (with --force-inc option)
+    if not isFileAlreadyHere(media.filename) or (args.force and isFileComplete(media.filename)):
+      downloadStream(media)
 
   if(len(toDownload) == 0):
     print _("All medias have already been downloaded, nothing to do.")
   else:
     print _("Done.")
 
+def downloadStream(media):
+  print media.title #title
+  media.filename = media.filename + u"_" +  media.title.replace(" ", "-")
+  # TODO handle mplayer "connection refused" --> we need to delete the file
+  fullPath = os.path.join(work_folder, (u"%s" % media.filename))
+  try:      
+    process = subprocess.Popen(["mplayer", "-dumpstream", media.mediaLink, "-dumpfile", fullPath], shell=False) #os.system(cmd) --> issue with unicode chars
+    process.wait()
+  except KeyboardInterrupt: #Ctrl-C
+    process.terminate()
+    print _("The process has been interrupted --> renaming the file to %s") % "NOT FINISHED"
+    shutil.move(fullPath, work_folder + "/" + "NOT_FINISHED_" + media.filename)
+  except:
+    print _("Oops, something unexpected happened while running mplayer")
+  else:
+    print _(" %s, %s%sFile already present. No need for downloading.") % (media.date, media.title, '\n\t')
+
 def isFileAlreadyHere(filename):
   for aFile in os.listdir(work_folder):
     # Trunking the file name to the original file name ie cdanslair_YYYYMMDD
     if aFile[:18] == filename:
       return True
+  # If no match found the file is no present in the folder
+  return False
+
+def isFileComplete(filename):
+  '''Checks whether a file looks complete, i.e. more than 500 MB'''
+  SIZE_COMPLETE = 500000 # 500 MB
+  for aFile in os.listdir(work_folder):
+    # Trunking the file name to the original file name ie cdanslair_YYYYMMDD
+    if aFile[:18] == filename:
+      statinfo = os.stat(os.path.join(work_folder, aFile))
+      if(statinfo.st_size > SIZE_COMPLETE):
+        return True
   # If no match found the file is no present in the folder
   return False
 

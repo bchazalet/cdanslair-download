@@ -33,7 +33,7 @@ msgstr "Erreur lors de la récupération du flux RSS."
 
 #: download-cdanslair.py:44
 msgid "Checking and fetching (%s): "
-msgstr ""
+msgstr "Recherche des vidéos:"
 
 #: download-cdanslair.py:75
 msgid "The process has been interrupted --> renaming the file to %s"
@@ -41,21 +41,21 @@ msgstr "Le processues a été interrompu --> le fichier a été renommé en %s"
 
 #: download-cdanslair.py:78
 msgid "Oops, something unexpected happened while running mplayer"
-msgstr ""
+msgstr "Oups, une erreur est survenue lors du lancement de mplayer"
 
 #: download-cdanslair.py:81
 msgid " %s, %s%sFile already present. No need for downloading."
-msgstr ""
+msgstr "Le ficher est déjà là, pas besoin de le télécharger."
 
 #: download-cdanslair.py:84
 msgid "All medias have already been downloaded, nothing to do."
-msgstr ""
+msgstr "Toutes les vidéos ont déjà été téléchargées, rien à faire."
 
 #: download-cdanslair.py:86
 msgid "Done."
-msgstr ""
+msgstr "Fini."
 
 #: download-cdanslair.py:115
 msgid "Could not find the id-video link in the page. This probably means that the video has not been published yet."
-msgstr ""
+msgstr "Le lien id-video n'a pas pu être trouvé. C'est sûrement que la vidéo n'a pas encore été publiée."
 

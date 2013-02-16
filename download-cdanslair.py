@@ -5,6 +5,8 @@ import datetime
 import subprocess
 import shutil
 import os
+# My own modules
+sys.path.append(os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), 'pym'))
 import urllister
 import metataglister
 from xml.dom import minidom

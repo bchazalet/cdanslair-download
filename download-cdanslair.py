@@ -64,7 +64,7 @@ def main():
       print media.title #title
       media.filename = media.filename + u"_" +  media.title.replace(" ", "-")
       # TODO handle mplayer "connection refused" --> we need to delete the file
-      fullPath = u"%s" % (work_folder + "/" + media.filename)
+      fullPath = os.path.join(work_folder, (u"%s" % media.filename))
       try:      
         process = subprocess.Popen(["mplayer", "-dumpstream", media.mediaLink, "-dumpfile", fullPath], shell=False) #os.system(cmd) --> issue with unicode chars
         process.wait()

@@ -27,13 +27,14 @@ def main():
     if(os.path.exists(args.dir)):
       work_folder = os.path.abspath(args.dir)
     else:
-      print "Director does not exist. Exiting."
+      print "Directory " + args.dir + " does not exist. Exiting."
       exit()
 
   # Downloading latest RSS file
-  print "Fetching RSS"
+  #print "Fetching RSS"
   episodes = parseRssFeed(RSS_URL)
   if(episodes == -1):
+    print "Could not fetch the RSS feed. Exiting."
     exit()
 
   toDownload = []
@@ -83,10 +84,10 @@ def main():
 
 def isFileAlreadyHere(filename):
   for aFile in os.listdir(work_folder):
-    #TRunking the file name to the original file name ie cdanslair_YYYYMMDD
+    # Trunking the file name to the original file name ie cdanslair_YYYYMMDD
     if aFile[:18] == filename:
       return True
-  #If no match found the file is no present in the folder
+  # If no match found the file is no present in the folder
   return False
 
 def clickExtractAndBuildUrl(ep_url):
@@ -100,8 +101,7 @@ def clickExtractAndBuildUrl(ep_url):
   ep_sock.close()
   parser.close()
   for url in parser.urls:
-    # I am looking for a URL like this
-    # http://info.francetelevisions.fr/?id-video=rhozet_cdanslair_20111024_455_24102011180940_F5
+    # I am looking for a URL like this:
     # New one: http://info.francetelevisions.fr/video-info/?id-video=rhozet_cdanslair_20111104_455_04112011182935_F5
     if url.startswith("http://info.francetelevisions.fr/video-info/?id-video="):
       # Now we need to look for <meta name="urls-url-video" content="Autre/Autre/2011/S43/J1/332858_cdanslair_20111024.wmv" >
@@ -109,11 +109,11 @@ def clickExtractAndBuildUrl(ep_url):
       if(wmvResource == -1 or wmvResource == None):
         return -1
       return MMS_BEGINNING + wmvResource
-  print "Could not find the id-video link in the page"
+  print "Could not find the id-video link in the page. This probably means that the video has not been published yet."
   return -1
 
 def getContentOfMeta(url, metaId):
-  #Now we need to look for <meta name="urls-url-video" content="Autre/Autre/2011/S43/J1/332858_cdanslair_20111024.wmv" >
+  # Now we need to look for <meta name="urls-url-video" content="Autre/Autre/2011/S43/J1/332858_cdanslair_20111024.wmv" >
   try:
     ep_sock = urllib2.urlopen(url)  
   except IOError:
@@ -135,7 +135,6 @@ def parseRssFeed(rss_url):
   try:
     url_sock = urllib2.urlopen(rss_url)
   except IOError:
-    print "Could not fetch the RSS feed. Exiting."
     return -1;
   xmldoc = minidom.parse(url_sock)  
   url_sock.close()

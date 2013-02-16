@@ -106,33 +106,36 @@ def clickExtractAndBuildUrl(ep_url):
   parser.close()
   for url in parser.urls:
     # I am looking for a URL like this:
-    # New one: http://info.francetelevisions.fr/video-info/?id-video=rhozet_cdanslair_20111104_455_04112011182935_F5
+    # http://info.francetelevisions.fr/video-info/?id-video=rhozet_cdanslair_20111104_455_04112011182935_F5
     if url.startswith("http://info.francetelevisions.fr/video-info/?id-video="):
-      # Now we need to look for <meta name="urls-url-video" content="Autre/Autre/2011/S43/J1/332858_cdanslair_20111024.wmv" >
-      wmvResource = getContentOfMeta(url, "urls-url-video")
-      if(wmvResource == -1 or wmvResource == None):
+      media_stream = getMediaPath(url[url.index('=')+1:])
+      if(media_stream == -1 or media_stream == None):
         return -1
-      return MMS_BEGINNING + wmvResource
+      return MMS_BEGINNING + media_stream
   print _("Could not find the id-video link in the page. This probably means that the video has not been published yet.")
   return -1
 
-def getContentOfMeta(url, metaId):
-  # Now we need to look for <meta name="urls-url-video" content="Autre/Autre/2011/S43/J1/332858_cdanslair_20111024.wmv" >
+def getMediaPath(external_id):
+  '''Makes an extra query to find out the media path on the server'''
+  # id-externe=rhozet_c_dans_lair_20130212_455_12022013191331_F5
+  info_url = "http://www.france5.fr/appftv/webservices/video/getInfosVideo.php?src=cappuccino&video-type=simple\
+&template=ftvi&template-format=complet&id-externe=" + external_id
   try:
-    ep_sock = urllib2.urlopen(url)  
+    url_sock = urllib2.urlopen(info_url)
   except IOError:
     return -1;
-  parser = metataglister.MetaTagLister()
-  parser.feed(ep_sock.read())
-  ep_sock.close()
-  parser.close()
-  for metaTag in parser.metaTags:
-    nameAttr = metaTag[0]
-    attrName =  nameAttr[0]
-    attrValue = nameAttr[1]
-    if attrName == "name" and attrValue == "urls-url-video":
-      contentAttr = metaTag[1]
-      return contentAttr[1]
+  xmldoc = minidom.parse(url_sock)  
+  url_sock.close()
+  # It should be safe to assume there is only one 'fichier' node
+  element = xmldoc.getElementsByTagName("element")[0]
+  video = element.getElementsByTagName("video")[0]
+  if(video == None):
+    print _("Media file not found on the server")
+    return -1
+  fichier = video.getElementsByTagName("fichiers")[0].getElementsByTagName("fichier")[0]
+  name = fichier.getElementsByTagName("nom")[0].firstChild.data
+  path = fichier.getElementsByTagName("chemin")[0].firstChild.data
+  return path + name;
 
 def parseRssFeed(rss_url):
   # Refactored w/ http://www.blog.pythonlibrary.org/2010/11/12/python-parsing-xml-with-minidom/
@@ -142,7 +145,6 @@ def parseRssFeed(rss_url):
     return -1;
   xmldoc = minidom.parse(url_sock)  
   url_sock.close()
-  node = xmldoc.documentElement
   items = xmldoc.getElementsByTagName("item")
   episodes = [] #storing the episodes properties
   for item in items:

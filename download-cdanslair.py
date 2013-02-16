@@ -15,7 +15,7 @@ import urllister
 import metataglister
 from xml.dom import minidom
 
-# Where the downloaded medias are stored
+# RSS FEED
 RSS_URL = "http://feeds.feedburner.com/france5/Gxsc?format=xml"
 
 def main():
@@ -34,7 +34,6 @@ def main():
       exit()
 
   # Downloading latest RSS file
-  #print "Fetching RSS"
   episodes = parseRssFeed(RSS_URL)
   if(episodes == -1):
     print _("Could not fetch the RSS feed. Exiting.")
@@ -44,7 +43,7 @@ def main():
   tmp_s = _("Checking and fetching (%d): ") % len(episodes)
   os.write(1,tmp_s)
   for ep in episodes:
-    #For some reasons, fetching the URL takes time (slow server response), so we should check already if we already have the file.
+    # For some reasons, fetching the URL takes time (slow server response), so we should check already if we already have the file.
     if not isFileAlreadyHere(ep.filename):
       ep.fetchMediaLink()
       if(ep.mediaLink == -1):
@@ -57,16 +56,14 @@ def main():
       #print "\n" + ep.date + ", " + ep.title + "\n\tFile already present. No need for fetching MMS link and downloading."
   os.write(1,"\n");
 
-  #Start mplayer
-  #How the url looks like
-  #mms://a533.v55778.c5577.e.vm.akamaistream.net/7/533/5577/42c40fe4/lacinq.download.akamai.com/5577/internet/cdanslair/cdanslair_20110801.wmv
+  # Start mplayer
   for media in toDownload:
-    #check if file is already here (in the folder)
+    # Check if file is already here (in the folder)
+    # TODO check its size
     if not isFileAlreadyHere(media.filename):
       print media.title #title
       media.filename = media.filename + u"_" +  media.title.replace(" ", "-")
-      #print media.desc #desc # do not display unless we can parse it before (html)
-      #TODO handle mplayer "connection refused" --> we need to delete the file
+      # TODO handle mplayer "connection refused" --> we need to delete the file
       fullPath = u"%s" % (work_folder + "/" + media.filename)
       try:      
         process = subprocess.Popen(["mplayer", "-dumpstream", media.mediaLink, "-dumpfile", fullPath], shell=False) #os.system(cmd) --> issue with unicode chars
@@ -77,7 +74,6 @@ def main():
         shutil.move(fullPath, work_folder + "/" + "NOT_FINISHED_" + media.filename)
       except:
         print _("Oops, something unexpected happened while running mplayer")
-      #print "Mplayer return code: " + str(process.returncode)
     else:
       print _(" %s, %s%sFile already present. No need for downloading.") % (media.date, media.title, '\n\t')
 

@@ -6,11 +6,11 @@ It then uses mplayer with -dumpstream option to download the stream and save it 
 
 ## Installation & launch for Ubuntu 12.10
 You will need to install mplayer:   
-sudo apt-get install mplayer
+`sudo apt-get install mplayer`
 
 You'll need python:    
-sudo apt-get install python
+`sudo apt-get install python`
 
 That's it, now you can run the script:    
-python download-cdanslair.py
+`python download-cdanslair.py`
 

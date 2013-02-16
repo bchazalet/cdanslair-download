@@ -23,6 +23,7 @@ def main():
   parser = argparse.ArgumentParser(description=_('Downloads the newly available cdanslair episodes.'))
   parser.add_argument('-d', '--dir', action='store', metavar='directory', default='.', help=_('The directory where to store the media files'))
   parser.add_argument('-f', '--force', action="store_true", help=_('Force new download for incomplete files'))
+  parser.add_argument('-c', '--check', action="store_true", help=_('Check for new episodes only, but do not download'))
   args = parser.parse_args()
 
   global work_folder
@@ -41,7 +42,7 @@ def main():
     exit()
 
   toDownload = []
-  tmp_s = _("Checking and fetching (%d): ") % len(episodes)
+  tmp_s = _("Checking for (%d) new episodes: ") % len(episodes)
   os.write(1,tmp_s)
   for ep in episodes:
     # For some reasons, fetching the URL takes time (slow server response),
@@ -52,21 +53,26 @@ def main():
       if(ep.mediaLink == -1):
         os.write(1,"?")
       else:
-        os.write(1,".")
+        os.write(1,"@")
         toDownload.append(ep)
     else:
       os.write(1,"#")
       #print "\n" + ep.date + ", " + ep.title + "\n\tFile already present. No need for fetching MMS link and downloading."
   os.write(1,"\n");
 
-  # Start mplayer
-  for media in toDownload:
-    # Check if file is already here or if it is incomplete (with --force-inc option)
-    if not isFileAlreadyHere(media.filename) or (args.force and isFileComplete(media.filename)):
-      downloadStream(media)
+  # Download media files
+  if(not args.check):
+    for media in toDownload:
+      # Check if file is already here or if it is incomplete (with --force-inc option)
+      if not isFileAlreadyHere(media.filename) or (args.force and isFileComplete(media.filename)):
+        downloadStream(media)
 
   if(len(toDownload) == 0):
     print _("All medias have already been downloaded, nothing to do.")
+  elif(args.check):
+    print _("There would be %d episodes to download:") % len(toDownload)
+    for ep in toDownload:
+      print "* " + ep.title
   else:
     print _("Done.")
 

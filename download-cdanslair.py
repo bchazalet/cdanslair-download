@@ -1,4 +1,7 @@
 #!/usr/bin/python -tt
+
+__author__ = "Boris Chazalet"
+
 import sys
 import gettext
 import locale
@@ -12,7 +15,6 @@ import argparse
 # My own modules
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), 'pym'))
 import urllister
-import metataglister
 from xml.dom import minidom
 
 # RSS FEED
@@ -56,7 +58,7 @@ def main():
   if(len(epToDownload) == 0):
     print _("All medias have already been downloaded, nothing to do.")
   elif(args.check):
-    print _("There would be %d episodes to download:") % len(epToDownload)
+    print _("There would be %d episode(s) to download:") % len(epToDownload)
     for ep in epToDownload:
       print "* " + ep.title
   else:

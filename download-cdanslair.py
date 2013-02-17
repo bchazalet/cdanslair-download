@@ -96,8 +96,7 @@ def downloadStream(media):
     shutil.move(fullPath, work_folder + "/" + "NOT_FINISHED_" + media.filename)
   except:
     print _("Oops, something unexpected happened while running mplayer")
-  else:
-    print _(" %s, %s%sFile already present. No need for downloading.") % (media.date, media.title, '\n\t')
+  
 
 def isFileAlreadyHere(filename):
   for aFile in os.listdir(work_folder):

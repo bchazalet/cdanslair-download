@@ -41,40 +41,46 @@ def main():
     print _("Could not fetch the RSS feed. Exiting.")
     exit()
 
-  toDownload = []
+  # Check for new episodes
   tmp_s = _("Checking for (%d) new episodes: ") % len(episodes)
   os.write(1,tmp_s)
-  for ep in episodes:
-    # For some reasons, fetching the URL takes time (slow server response),
-    # so we should check first whether we already have the file.
-    # If --force-inc option is selected and file not completed, we fetch the link too
-    if not isFileAlreadyHere(ep.filename) or (args.force and isFileComplete(ep.filename)):
-      ep.fetchMediaLink()
-      if(ep.mediaLink == -1):
-        os.write(1,"?")
-      else:
-        os.write(1,"@")
-        toDownload.append(ep)
-    else:
-      os.write(1,"#")
-      #print "\n" + ep.date + ", " + ep.title + "\n\tFile already present. No need for fetching MMS link and downloading."
-  os.write(1,"\n");
+  epToDownload = checkNewEpisodes(episodes, args.force, True)
 
   # Download media files
   if(not args.check):
-    for media in toDownload:
+    for media in epToDownload:
       # Check if file is already here or if it is incomplete (with --force-inc option)
       if not isFileAlreadyHere(media.filename) or (args.force and isFileComplete(media.filename)):
         downloadStream(media)
 
-  if(len(toDownload) == 0):
+  if(len(epToDownload) == 0):
     print _("All medias have already been downloaded, nothing to do.")
   elif(args.check):
-    print _("There would be %d episodes to download:") % len(toDownload)
-    for ep in toDownload:
+    print _("There would be %d episodes to download:") % len(epToDownload)
+    for ep in epToDownload:
       print "* " + ep.title
   else:
     print _("Done.")
+
+def checkNewEpisodes(episodes, force, should_print):
+  toDownload = []
+  for ep in episodes:
+    # For some reasons, fetching the URL takes time (slow server response),
+    # so we should check first whether we already have the file.
+    # If --force-inc option is selected and file not completed, we fetch the link too
+    if not isFileAlreadyHere(ep.filename) or (force and isFileComplete(ep.filename)):
+      ep.fetchMediaLink()
+      if(ep.mediaLink == -1 and should_print):
+        os.write(1,"?")
+      else:
+        if(should_print):
+          os.write(1,"@")
+        toDownload.append(ep)
+    elif(should_print):
+      os.write(1,"#")
+  if(should_print):
+    os.write(1,"\n");
+  return toDownload
 
 def downloadStream(media):
   print media.title #title

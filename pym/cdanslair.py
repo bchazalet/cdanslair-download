@@ -75,7 +75,7 @@ def checkNewEpisodes(work_folder, episodes, force, should_print):
     # For some reasons, fetching the URL takes time (slow server response),
     # so we should check first whether we already have the file.
     # If --force-inc option is selected and file not completed, we fetch the link too
-    if not isFileAlreadyHere(work_folder, ep.filename) or (force and isFileComplete(work_folder, ep.filename)):
+    if not isFileAlreadyHere(work_folder, ep.filename) or (force and not isFileComplete(work_folder, ep.filename)):
       ep.fetchMediaLink()
       if(ep.mediaLink == -1 and should_print):
         os.write(1,"?")
@@ -142,7 +142,7 @@ def isFileAlreadyHere(work_folder, filename):
 
 def isFileComplete(work_folder, filename):
   '''Checks whether a file looks complete, i.e. more than 500 MB'''
-  SIZE_COMPLETE = 500000 # 500 MB
+  SIZE_COMPLETE = 500000000 # 500 MB
   for aFile in os.listdir(work_folder):
     # Trunking the file name to the original file name ie cdanslair_YYYYMMDD
     if aFile[:18] == filename:

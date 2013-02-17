@@ -46,7 +46,7 @@ def main():
   if(not args.check):
     for media in epToDownload:
       # Check if file is already here or if it is incomplete (with --force-inc option)
-      if not cdanslair.isFileAlreadyHere(work_folder, media.filename) or (args.force and cdanslair.isFileComplete(work_folder, media.filename)):
+      if not cdanslair.isFileAlreadyHere(work_folder, media.filename) or (args.force and not cdanslair.isFileComplete(work_folder, media.filename)):
         downloadStream(media)
 
   if(len(epToDownload) == 0):

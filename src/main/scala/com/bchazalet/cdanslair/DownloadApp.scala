@@ -9,6 +9,9 @@ import play.api.libs.json.Json
 import java.io.File
 import scala.util.Try
 import org.joda.time.format.DateTimeFormat
+import scala.concurrent.ExecutionContext
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
 object DownloadApp extends App {
   
@@ -32,22 +35,31 @@ object DownloadApp extends App {
     todo
   }
   
-  // we should download one after another here, not all at once
-  val download = undownloaded.flatMap { episodes =>
-    val ep = episodes.head
-    val rightFormat = ep.videos.find(_.format == Format.M3U8_DOWNLOAD).get //.toRight(s"Could not find a video with the format ${Format.M3U8_DOWNLOAD}")
-    println(s"Downloading latest episode: ${ep.id} - ${ep.sous_titre}")
-    streamDownloader.download(new URL(rightFormat.url), new File(outputFolder, s"${ep.id.value}-${ep.diffusion.publishedAt.toString(format)}.ts"))
+  // ensures the downloads are done sequentially, one after another (who has bandwidth for more?)
+  val singleThreadedExecutor = Executors.newSingleThreadExecutor
+  val singleThreaded = ExecutionContext.fromExecutor(singleThreadedExecutor)
+  
+  val downloaded = undownloaded.flatMap { episodes =>
+    val many = episodes.map { ep =>
+      val rightFormat = ep.videos.find(_.format == Format.M3U8_DOWNLOAD).get //.toRight(s"Could not find a video with the format ${Format.M3U8_DOWNLOAD}")
+      Future {
+        println(s"Downloading episode: ${ep.id} - ${ep.sous_titre}")
+        streamDownloader.download(new URL(rightFormat.url), new File(outputFolder, s"${ep.id.value}-${ep.diffusion.publishedAt.toString(format)}.ts"))
+      }(singleThreaded)
+    }
+    Future.sequence(many)
   }
   
   try {
-    val file = Await.result(download, 3 hours)
+    Await.result(downloaded, 3 hours)
   } catch {
     case e: Exception =>  println(e.getMessage)
   } finally {
     client.close()
+    // non-daemon thread, we must shut down for jvm to exit
+    singleThreadedExecutor.shutdown()
   }
+  
+  println("all done, bye now!")  
+  
 }
-
-
-

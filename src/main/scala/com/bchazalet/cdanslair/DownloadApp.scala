@@ -22,6 +22,7 @@ object DownloadApp extends App {
   val download = episodesF.flatMap { episodes =>
     val ep = episodes.head
     val rightFormat = ep.videos.find(_.format == Format.M3U8_DOWNLOAD).get //.toRight(s"Could not find a video with the format ${Format.M3U8_DOWNLOAD}")
+    println(s"Downloading latest episode: ${ep.id} - ${ep.sous_titre}")
     streamDownloader.download(new URL(rightFormat.url), new File(outputFolder, s"${ep.id.value}.ts"))
   }
   

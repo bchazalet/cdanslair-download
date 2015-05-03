@@ -21,12 +21,12 @@ case class EpisodeId(value: String){
   require(EpisodeId.valid.findFirstIn(value).isDefined, s"$value does not look like a valid episode id")
 }
 
-
-case class Episode(id: EpisodeId, videos: Seq[Video])
+case class Episode(id: EpisodeId, sous_titre: String, diffusion: Diffusion, videos: Seq[Video])
 
 object Episode {
   private implicit val v = Video.videoReads
-
+  private implicit val d = Diffusion.diffReads
+  
   implicit val epReads = Json.reads[Episode]
   
 }
@@ -45,5 +45,13 @@ object Format {
   val HDS_AKAMAI = "hds_akamai"
   val HLS_V5_OS = "hls_v5_os"
   val M3U8_DOWNLOAD = "m3u8-download"
+  
+}
+
+case class Diffusion(timestamp: Int, date_debut: String)
+
+object Diffusion {
+  
+  implicit val diffReads = Json.reads[Diffusion]
   
 }

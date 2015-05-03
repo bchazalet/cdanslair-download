@@ -3,7 +3,7 @@ package com.bchazalet.cdanslair
 import java.net.URL
 import java.io.File
 import scala.concurrent.Future
-import scala.sys.process.Process
+import scala.sys.process.{ProcessLogger, Process}
 import scala.concurrent.ExecutionContext
 
 /**
@@ -21,10 +21,9 @@ class VLC(path: String)(implicit ec: ExecutionContext) extends StreamDownloader 
   // --sout file/ts:test vlc://quit
   
   override def download(streamUrl: URL, dest: File): Future[File] = {
-    println(s"now downloading $streamUrl")
-//    val filename = "test-video"
     val command = Seq(path, "-I", "dummy", "-vvv", streamUrl.toString, "--sout", s"file/ts:${dest.getAbsolutePath}", "vlc://quit")
-    Future(Process(command).run).map(_ => dest)
+    val vlcLogger = ProcessLogger(_ => (), _ => ())
+    Future(Process(command).!!(vlcLogger)).map(_ => dest)
   }
   
 }

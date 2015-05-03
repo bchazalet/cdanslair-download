@@ -17,9 +17,12 @@ object DownloadApp extends App {
   
   val streamDownloader: StreamDownloader = new VLC("/Applications/VLC.app/Contents/MacOS/VLC")
   
+  val outputFolder = new File("/Users/bchazalet/Downloads/cdanslair")
+  
   val download = episodesF.flatMap { episodes =>
-    val rightFormat = episodes.head.videos.find(_.format == Format.M3U8_DOWNLOAD).get //.toRight(s"Could not find a video with the format ${Format.M3U8_DOWNLOAD}")
-    streamDownloader.download(new URL(rightFormat.url), new File(""))
+    val ep = episodes.head
+    val rightFormat = ep.videos.find(_.format == Format.M3U8_DOWNLOAD).get //.toRight(s"Could not find a video with the format ${Format.M3U8_DOWNLOAD}")
+    streamDownloader.download(new URL(rightFormat.url), new File(outputFolder, s"${ep.id.value}.ts"))
   }
   
   try {

@@ -22,8 +22,8 @@ class VLC(path: String)(implicit ec: ExecutionContext) extends StreamDownloader 
   
   override def download(streamUrl: URL, dest: File): Future[File] = {
     println(s"now downloading $streamUrl")
-    val filename = "test-video"
-    val command = Seq(path, "-I", "dummy", "-vvv", streamUrl.toString, "--sout", s"file/ts:$filename", "vlc://quit")
+//    val filename = "test-video"
+    val command = Seq(path, "-I", "dummy", "-vvv", streamUrl.toString, "--sout", s"file/ts:${dest.getAbsolutePath}", "vlc://quit")
     Future(Process(command).run).map(_ => dest)
   }
   

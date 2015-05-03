@@ -6,6 +6,10 @@ import play.api.libs.json.Reads
 import play.api.libs.json.JsError
 import scala.util.Try
 import play.api.libs.json.JsSuccess
+import play.api.libs.json.JsPath
+import play.api.libs.functional.syntax._
+import org.joda.time.DateTime
+import org.joda.time.format.DateTimeFormat
 
 object EpisodeId {
   
@@ -21,7 +25,11 @@ case class EpisodeId(value: String){
   require(EpisodeId.valid.findFirstIn(value).isDefined, s"$value does not look like a valid episode id")
 }
 
-case class Episode(id: EpisodeId, sous_titre: String, diffusion: Diffusion, videos: Seq[Video])
+case class Episode(id: EpisodeId, sous_titre: String, diffusion: Diffusion, videos: Seq[Video]) extends Ordered[Episode]{
+  
+  def compare(that: Episode) =  this.diffusion.publishedAt.compareTo(that.diffusion.publishedAt)
+  
+}
 
 object Episode {
   private implicit val v = Video.videoReads
@@ -30,7 +38,6 @@ object Episode {
   implicit val epReads = Json.reads[Episode]
   
 }
-
 
 case class Video(format: String, url: String, statut: String)
 
@@ -48,10 +55,14 @@ object Format {
   
 }
 
-case class Diffusion(timestamp: Int, date_debut: String)
+case class Diffusion(timestamp: Int, publishedAt: DateTime)
 
 object Diffusion {
   
-  implicit val diffReads = Json.reads[Diffusion]
+  implicit val diffReads: Reads[Diffusion] = 
+    (   
+      (JsPath \ "timestamp").read[Int] and
+      (JsPath \ "date_debut").read[String].map(s => DateTime.parse(s, DateTimeFormat.forPattern("dd/MM/YYYY HH:mm"))) // "date_debut":"01\/05\/2015 17:50"
+    )(Diffusion.apply _)
   
 }

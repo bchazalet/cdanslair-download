@@ -27,3 +27,9 @@ class VLC(path: String)(implicit ec: ExecutionContext) extends StreamDownloader 
   }
   
 }
+
+object Dummy extends StreamDownloader {
+  
+  def download(url: URL, dest: File): Future[File] = Future.successful(dest)
+  
+}

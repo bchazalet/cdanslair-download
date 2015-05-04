@@ -12,7 +12,8 @@ libraryDependencies ++= Seq(
   "com.typesafe.play" %% "play-ws" % "2.3.8",
   "com.typesafe.play" %% "play-json" % "2.3.4",
   "joda-time"  % "joda-time" % "2.7",
-  "org.joda" % "joda-convert" % "1.7"
+  "org.joda" % "joda-convert" % "1.7",
+  "com.github.scopt" %% "scopt" % "3.3.0"
 )
 
 

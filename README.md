@@ -1,6 +1,6 @@
 A scala program that downloads the available episodes from cdanslair.
 
-The program is available for streaming at:
+The show is available for streaming at:
 http://www.france5.fr/emissions/c-dans-l-air
 
 and also at:

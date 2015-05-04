@@ -12,6 +12,7 @@ import org.joda.time.format.DateTimeFormat
 import scala.concurrent.ExecutionContext
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import scala.concurrent.Promise
 
 object DownloadApp extends App {
   
@@ -48,7 +49,7 @@ object DownloadApp extends App {
     
     val episodesF = client.fetch()
     
-    val undownloaded = episodesF.map { episodes =>
+    val undownloadedF = episodesF.map { episodes =>
       val eps = episodes.sortWith(_ > _) // most recent first
       val files = outputFolder.listFiles
       def isPresent(ep: Episode): Boolean = files.find(_.getName.startsWith(ep.id.value)).isDefined
@@ -58,27 +59,37 @@ object DownloadApp extends App {
       todo
     }
     
+    // TODO should be wrapped with Try
+    val undownloaded = Await.result(undownloadedF, 2 minutes)
+    
+    val eofStream: CancelEventStream = new ConsoleEOFEventStream()
+    
     // ensures the downloads are done sequentially, one after another (who has bandwidth for more?)
     val singleThreadedExecutor = Executors.newSingleThreadExecutor
     val singleThreaded = ExecutionContext.fromExecutor(singleThreadedExecutor)
     
-    val downloaded = undownloaded.flatMap { episodes =>
-      val many = episodes.map { ep =>
-        val rightFormat = ep.videos.find(_.format == Format.M3U8_DOWNLOAD).get //.toRight(s"Could not find a video with the format ${Format.M3U8_DOWNLOAD}")
-        Future {
-          println(s"Downloading episode: ${ep.id} - ${ep.sous_titre}")
-          streamDownloader.download(new URL(rightFormat.url), new File(outputFolder, s"${ep.id.value}-${ep.diffusion.publishedAt.toString(format)}.ts"))
-        }(singleThreaded)
-      }
-      Future.sequence(many)
-    }
-    
     try {
-      Await.result(downloaded, 3 hours)
+    
+      undownloaded.foreach { ep =>
+        val rightFormat = ep.videos.find(_.format == Format.M3U8_DOWNLOAD).get //.toRight(s"Could not find a video with the format ${Format.M3U8_DOWNLOAD}")
+        println(s"Downloading episode: ${ep.id} - ${ep.sous_titre}")
+        println(s"Press Ctrl+D to cancel this download only")
+        val current = streamDownloader.download(new URL(rightFormat.url), new File(outputFolder, s"${ep.id.value}-${ep.diffusion.publishedAt.toString(format)}.ts"))
+        val eof = eofStream.next
+        val both = Future.firstCompletedOf(Seq(eof, current.future))
+        Await.ready(both, 2 hours)
+        if(eof.isCompleted){
+          // if we've completed because of EOF input from user, than cancel the download
+          current.cancel
+          println("::Cancelled")
+        }
+      }
+    
     } catch {
       case e: Exception =>  println(e.getMessage)
     } finally {
       client.close()
+      eofStream.stop()
       // non-daemon thread, we must shut down for jvm to exit
       singleThreadedExecutor.shutdown()
     }
@@ -88,3 +99,4 @@ object DownloadApp extends App {
   }
   
 }
+

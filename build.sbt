@@ -1,6 +1,10 @@
 
 resolvers += "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/"
 
+enablePlugins(JavaAppPackaging)
+
+version := "1.1-SNAPSHOT"
+
 scalaVersion := "2.11.5"
 
 libraryDependencies ++= Seq( 

@@ -7,12 +7,8 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import play.api.libs.json.Json
 import java.io.File
-import scala.util.Try
 import org.joda.time.format.DateTimeFormat
 import scala.concurrent.ExecutionContext
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
-import scala.concurrent.Promise
 
 object DownloadApp extends App {
   
@@ -38,8 +34,6 @@ object DownloadApp extends App {
   }
 
   def run(config: Config) = {
-  
-    val streamDownloader: StreamDownloader = new VLC(config.vlcPath)
     
     val outputFolder = config.out
     
@@ -59,12 +53,12 @@ object DownloadApp extends App {
       todo
     }
     
-    // TODO should be wrapped with Try
-    val undownloaded = Await.result(undownloadedF, 2 minutes)
-    
+    val streamDownloader: StreamDownloader = new VLC(config.vlcPath)
     val eofStream: CancelEventStream = new ConsoleEOFEventStream()
     
     try {
+    
+      val undownloaded = Await.result(undownloadedF, 1 minute)
     
       undownloaded.foreach { ep =>
         val rightFormat = ep.videos.find(_.format == Format.M3U8_DOWNLOAD).get //.toRight(s"Could not find a video with the format ${Format.M3U8_DOWNLOAD}")
@@ -80,15 +74,15 @@ object DownloadApp extends App {
           println("::Cancelled")
         }
       }
+      
+      println("all done, bye now!")
     
     } catch {
-      case e: Exception =>  println(e.getMessage)
+      case e: Exception =>  println("Error: " + e.getMessage)
     } finally {
       client.close()
       eofStream.stop()
     }
-    
-    println("all done, bye now!")  
   
   }
   

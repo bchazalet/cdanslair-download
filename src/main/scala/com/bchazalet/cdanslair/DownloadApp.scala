@@ -64,10 +64,6 @@ object DownloadApp extends App {
     
     val eofStream: CancelEventStream = new ConsoleEOFEventStream()
     
-    // ensures the downloads are done sequentially, one after another (who has bandwidth for more?)
-    val singleThreadedExecutor = Executors.newSingleThreadExecutor
-    val singleThreaded = ExecutionContext.fromExecutor(singleThreadedExecutor)
-    
     try {
     
       undownloaded.foreach { ep =>
@@ -90,8 +86,6 @@ object DownloadApp extends App {
     } finally {
       client.close()
       eofStream.stop()
-      // non-daemon thread, we must shut down for jvm to exit
-      singleThreadedExecutor.shutdown()
     }
     
     println("all done, bye now!")  

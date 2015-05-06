@@ -61,9 +61,7 @@ object DownloadApp extends App {
     
     val client = new CdanslairClient()
     
-    val episodesF = client.fetch()
-    
-    val undownloadedF = episodesF.map { episodes =>
+    val undownloadedF = client.fetch().map { episodes =>
       val eps = episodes.sortWith(_ > _) // most recent first
       val files = outputFolder.listFiles
       def isPresent(ep: Episode): Boolean = files.find(_.getName.startsWith(ep.id.value)).isDefined
@@ -71,7 +69,7 @@ object DownloadApp extends App {
       println(s"There are ${todo.size} episodes to download:")
       todo.foreach(ep => println(s"${ep.diffusion.publishedAt.toString(format)} -> ${ep.id} - ${ep.sous_titre}"))
       todo
-    }
+    }.andThen { case _ => client.close() }
     
     val firstStep: Either[CdlrError, Seq[Episode]] = 
       Try(Await.result(undownloadedF, 1 minute)) match {
@@ -79,8 +77,6 @@ object DownloadApp extends App {
         case Failure(ex) => Left(WebserviceError(None, Some(ex)))
       }
     
-    client.close()
-      
     firstStep.right.flatMap { undownloaded =>
       
       val sd: StreamDownloader = new VLC(config.vlcPath)

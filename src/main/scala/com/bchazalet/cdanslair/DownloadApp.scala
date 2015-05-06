@@ -9,8 +9,26 @@ import play.api.libs.json.Json
 import java.io.File
 import org.joda.time.format.DateTimeFormat
 import scala.concurrent.ExecutionContext
+import scala.util.Try
+import scala.util.control.NonFatal
+import scala.util.Success
+import scala.util.Failure
+import org.joda.time.format.DateTimeFormatter
+import com.bchazalet.cdanslair.CancelEventStream._
+
+sealed trait CdlrError
+case class WebserviceError(msg: Option[String], ex: Option[Throwable]) extends CdlrError
+case class DownloadError(msg: Option[String], ex: Option[Throwable]) extends CdlrError
+//case object WrongFormat() extends CdlrError
+case class Unknown(ex: Option[Throwable]) extends CdlrError
 
 object DownloadApp extends App {
+  
+  def forUser(err: CdlrError): String = err match {
+    case WebserviceError(msg, _) => s"we couldn't connect to the cdanslair servers ${msg.map("(" + _ + ")").getOrElse("")}"
+    case DownloadError(msg, _) => s"we had an error while downloading and saving the video stream ${msg.map("(" + _ + ")").getOrElse("")}"
+    case Unknown(ex) => s"we encountered an unexpected error ${ex.map("(" + _.getMessage + ")").getOrElse("")}"
+  } 
   
   val defaultVlc = "/Applications/VLC.app/Contents/MacOS/VLC"
   
@@ -18,6 +36,7 @@ object DownloadApp extends App {
   val appName = "cdanslair-download"
   
   case class Config(out: File = new File("."), vlcPath: File = new File(defaultVlc))
+  
   val parser = new scopt.OptionParser[Config](appName) {
     head(appName, appVersion)
     opt[File]('o', "out") required() valueName("<folder>") action { (x, c) =>
@@ -29,15 +48,16 @@ object DownloadApp extends App {
   }
   
   parser.parse(args, Config()) match {
-    case Some(c) => run(c)
+    case Some(c) => run(c).fold(error => print(forUser(error)), eps => println(s"all done (${eps.size} completed), bye now!"))
     case None => // arguments are bad, error message will have been displayed
   }
 
-  def run(config: Config) = {
+  /** returns the number of episodes *completed* */
+  def run(config: Config): Either[CdlrError, Seq[Episode]] = {
     
     val outputFolder = config.out
     
-    val format = DateTimeFormat.forPattern("dd-MM-YYYY")
+    implicit val format = DateTimeFormat.forPattern("dd-MM-YYYY")
     
     val client = new CdanslairClient()
     
@@ -53,37 +73,61 @@ object DownloadApp extends App {
       todo
     }
     
-    val streamDownloader: StreamDownloader = new VLC(config.vlcPath)
+    val firstStep: Either[CdlrError, Seq[Episode]] = 
+      Try(Await.result(undownloadedF, 1 minute)) match {
+        case Success(x) => Right(x)
+        case Failure(ex) => Left(WebserviceError(None, Some(ex)))
+      }
+    
+    client.close()
+      
+    firstStep.right.flatMap { undownloaded =>
+      
+      val sd: StreamDownloader = new VLC(config.vlcPath)
+      tryDownload(undownloaded, sd, outputFolder)
+      
+    }
+    
+  }
+  
+  /** tries download the given list of episodes */
+  def tryDownload(undownloaded: Seq[Episode], streamDownloader: StreamDownloader, outputFolder: File)(implicit dtf: DateTimeFormatter): Either[CdlrError, Seq[Episode]] = {
     val eofStream: CancelEventStream = new ConsoleEOFEventStream()
     
     try {
-    
-      val undownloaded = Await.result(undownloadedF, 1 minute)
-    
-      undownloaded.foreach { ep =>
-        val rightFormat = ep.videos.find(_.format == Format.M3U8_DOWNLOAD).get //.toRight(s"Could not find a video with the format ${Format.M3U8_DOWNLOAD}")
-        println(s"Downloading episode: ${ep.id} - ${ep.sous_titre}")
-        println(s"Press Ctrl+D to cancel this download only")
-        val current = streamDownloader.download(new URL(rightFormat.url), new File(outputFolder, s"${ep.id.value}-${ep.diffusion.publishedAt.toString(format)}.ts"))
-        val eof = eofStream.next
-        val both = Future.firstCompletedOf(Seq(eof, current.future))
-        Await.ready(both, 2 hours)
-        if(eof.isCompleted){
-          // if we've completed because of EOF input from user, than cancel the download
-          current.cancel
-          println("::Cancelled")
+      val all = undownloaded.map { ep =>
+        // we're ignoring -rather silently - the videos for which we don't find the right format
+        ep.videos.find(_.format == Format.M3U8_DOWNLOAD).flatMap { rightFormat =>
+          val dest = new File(outputFolder, s"${ep.id.value}-${ep.diffusion.publishedAt.toString(dtf)}.ts")
+          println(s"Downloading episode: ${ep.id} - ${ep.sous_titre}")
+          println(s"Press Ctrl+D to cancel this download only")
+          if(download(rightFormat, dest, streamDownloader, eofStream.next)) 
+            Some(ep) 
+          else None
         }
       }
       
-      println("all done, bye now!")
-    
+      Right(all.flatten)
     } catch {
-      case e: Exception =>  println("Error: " + e.getMessage)
+      case NonFatal(ex) => Left(DownloadError(Some("we couldn't download the video stream"), Some(ex)))
     } finally {
-      client.close()
       eofStream.stop()
     }
+  }
   
+  /** downloads the video stream and blocks until the stream is completed or the cancel event */
+  def download(vid: Video, dest: File, downloader: StreamDownloader, cancel: Future[CancelEvent])(implicit ec: ExecutionContext): Boolean = {
+    val current = downloader.download(new URL(vid.url), dest)
+    val both = Future.firstCompletedOf(Seq(cancel, current.future))
+    Await.ready(both, 2 hours)
+    if(cancel.isCompleted){
+      // if we've completed because of EOF input from user, than cancel the download
+      current.cancel
+      println("::Cancelled")
+      false
+    } else {
+      false
+    }
   }
   
 }

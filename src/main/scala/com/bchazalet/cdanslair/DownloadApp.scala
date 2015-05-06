@@ -1,34 +1,19 @@
 package com.bchazalet.cdanslair
 
-import java.net.URL
-import scala.concurrent.Await
-import scala.concurrent.duration._
-import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
-import play.api.libs.json.Json
-import java.io.File
-import org.joda.time.format.DateTimeFormat
+import scala.concurrent.{ Future, Await }
+import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
-import scala.util.Try
+import scala.util.{ Try, Success, Failure }
 import scala.util.control.NonFatal
-import scala.util.Success
-import scala.util.Failure
+import org.joda.time.format.DateTimeFormat
 import org.joda.time.format.DateTimeFormatter
 import com.bchazalet.cdanslair.CancelEventStream._
-
-sealed trait CdlrError
-case class WebserviceError(msg: Option[String], ex: Option[Throwable]) extends CdlrError
-case class DownloadError(msg: Option[String], ex: Option[Throwable]) extends CdlrError
-//case object WrongFormat() extends CdlrError
-case class Unknown(ex: Option[Throwable]) extends CdlrError
+import play.api.libs.json.Json
+import java.net.URL
+import java.io.File
 
 object DownloadApp extends App {
-  
-  def forUser(err: CdlrError): String = err match {
-    case WebserviceError(msg, _) => s"we couldn't connect to the cdanslair servers ${msg.map("(" + _ + ")").getOrElse("")}"
-    case DownloadError(msg, _) => s"we had an error while downloading and saving the video stream ${msg.map("(" + _ + ")").getOrElse("")}"
-    case Unknown(ex) => s"we encountered an unexpected error ${ex.map("(" + _.getMessage + ")").getOrElse("")}"
-  } 
   
   val defaultVlc = "/Applications/VLC.app/Contents/MacOS/VLC"
   
@@ -44,11 +29,10 @@ object DownloadApp extends App {
     
     opt[File]("vlc") valueName("<file>") action { (x, c) =>
       c.copy(vlcPath = x) } text(s"the path to your vlc program. Default points to $defaultVlc")
-    
   }
   
   parser.parse(args, Config()) match {
-    case Some(c) => run(c).fold(error => print(forUser(error)), eps => println(s"all done (${eps.size} completed), bye now!"))
+    case Some(c) => run(c).fold(error => print(CdlrError.forUser(error)), eps => println(s"all done (${eps.size} completed), bye now!"))
     case None => // arguments are bad, error message will have been displayed
   }
 
@@ -125,6 +109,4 @@ object DownloadApp extends App {
       false
     }
   }
-  
 }
-

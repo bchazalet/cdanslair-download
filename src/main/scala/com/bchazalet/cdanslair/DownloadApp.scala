@@ -106,7 +106,7 @@ object DownloadApp extends App {
       println("::Cancelled")
       false
     } else {
-      false
+      true
     }
   }
 }

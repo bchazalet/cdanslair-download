@@ -2,19 +2,39 @@ package com.bchazalet.cdanslair
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import com.ning.http.client.AsyncHttpClient
+import com.ning.http.client.ListenableFuture
+import scala.concurrent.Promise
+import com.ning.http.client.Response
+import com.ning.http.client.AsyncCompletionHandler
+import scala.util.Try
+import play.api.libs.json.Json
 
 class CdanslairClient(implicit ec: ExecutionContext) {
   import CdanslairClient._
   
-  val builder = new com.ning.http.client.AsyncHttpClientConfig.Builder()
-  val client = new play.api.libs.ws.ning.NingWSClient(builder.build())
+  val client = new AsyncHttpClient()
   
   val mainPage = "http://pluzz.francetv.fr/videos/c_dans_lair.html"
   val info = "http://webservices.francetelevisions.fr/tools/getInfosOeuvre/v2/?idDiffusion=%s&catalogue=Pluzz"
   
-  protected def getHomepage: Future[String] = {
-    client.url(mainPage).get.map(_.body)
+  protected def httpGet(url: String): Future[Response] = {
+    val promise = Promise.apply[Response]()
+    client.prepareGet(url).execute(new AsyncCompletionHandler[Unit](){
+
+        override def onCompleted(response: Response): Unit = {
+            promise.complete(Try(response))
+        }
+
+        override def onThrowable(t: Throwable) = {
+            promise.failure(t)
+        }
+    })
+    
+    promise.future
   }
+  
+  protected def getHomepage: Future[String] = httpGet(mainPage).map(_.getResponseBody)
   
   /** fetches the currently published episodes */
   def fetch(): Future[Seq[Episode]] = {
@@ -28,7 +48,7 @@ class CdanslairClient(implicit ec: ExecutionContext) {
   }
   
   def get(id: EpisodeId): scala.concurrent.Future[Episode] = {
-    client.url(info.format(id.value)).get.map{r => Episode.epReads.reads(r.json).get}
+    httpGet(info.format(id.value)).map{r => Episode.epReads.reads(Json.parse(r.getResponseBody)).get}
   }
   
   def close() = {

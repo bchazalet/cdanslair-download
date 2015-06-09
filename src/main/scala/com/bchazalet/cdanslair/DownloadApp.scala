@@ -25,7 +25,9 @@ object DownloadApp extends App {
   val parser = new scopt.OptionParser[Config](appName) {
     head(appName, appVersion)
     opt[File]('o', "out") required() valueName("<folder>") action { (x, c) =>
-      c.copy(out = x) } text("the output folder where to download the video files.")
+      c.copy(out = x) } text("the output folder where to download the video files.") validate { f =>
+        if(f.exists && f.isDirectory) success else failure("output folder does not exit")
+      }
     
     opt[File]("vlc") valueName("<file>") action { (x, c) =>
       c.copy(vlcPath = x) } text(s"the path to your vlc program. Default points to $defaultVlc")

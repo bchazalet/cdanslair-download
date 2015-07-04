@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Hello World!</title>
+  </head>
+  <body>
+    <h1>Hello World!</h1>
+    We are using io.js <script>document.write(process.version)</script>
+    and Electron <script>document.write(process.versions['electron'])</script>.
+
+    <script>
+      var fs = require('fs')
+      var path = require('path')
+      fs.readdir("/Users/bchazalet/Downloads/pluzz/cdanslair", function(err, files){
+        document.write('<ul>')
+        files.forEach(function(filename){
+          document.write('<li>')
+          document.write(filename)
+          document.write('</li>')
+        })
+        document.write('</ul>')
+      })
+    </script>
+
+
+
+  </body>
+</html>

@@ -29,7 +29,11 @@ lazy val cdanslairlib = crossProject.in(file(".")).
   ).
   jsSettings(
     // Add JS-specific settings here
-    libraryDependencies += "org.scala-js" %%% "scalajs-dom" % "0.8.0"
+    skip in packageJSDependencies := false,
+    libraryDependencies ++= Seq(
+      "be.doeraene" %%% "scalajs-jquery" % "0.8.0",
+      "org.scala-js" %%% "scalajs-dom" % "0.8.0"
+    )
   )
 
 lazy val cdanslairlibJVM = cdanslairlib.jvm.enablePlugins(JavaAppPackaging)

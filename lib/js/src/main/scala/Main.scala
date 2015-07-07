@@ -57,11 +57,17 @@ object MainApp extends js.JSApp {
   }
 
   def download(url: String, dest: String): Unit = {
-    val exec = g.require("child_process").exec
-    val cmd = Seq("/Applications/VLC.app/Contents/MacOS/VLC", "-I", "dummy", "-vvv", url, "--sout", s"file/ts:" + dest, "vlc://quit").mkString(" ")
+    val spawn = g.require("child_process").spawn
+    val cmd = "/Applications/VLC.app/Contents/MacOS/VLC"
+    val args = js.Array("-I", "dummy", "-vvv", url, "--sout", s"file/ts:" + dest, "vlc://quit")
 
-    exec(cmd, { (error: js.Dynamic, stdout: js.Dynamic, stderr: js.Dynamic) =>
-      // command output is in stdout
+    println("starting the download")
+    println(cmd)
+
+    val child = spawn(cmd, args, js.Dynamic.literal(stdio = "ignore"))
+
+    child.on("close", { (code: Int) =>
+      println("process exit code " + code)
     })
 
     println("download started")

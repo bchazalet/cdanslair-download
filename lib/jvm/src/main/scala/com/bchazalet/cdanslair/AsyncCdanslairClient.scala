@@ -10,7 +10,7 @@ import com.ning.http.client.AsyncCompletionHandler
 import scala.util.Try
 import upickle._
 
-class AsyncCdanslairClient(implicit ec: ExecutionContext) extends CdanslairClient {
+class AsyncCdanslairClient(implicit val ec: ExecutionContext) extends CdanslairClient {
 
   val client = new AsyncHttpClient()
 
@@ -30,20 +30,9 @@ class AsyncCdanslairClient(implicit ec: ExecutionContext) extends CdanslairClien
     promise.future
   }
 
-  protected def getHomepage: Future[String] = httpGet(mainPage).map(_.getResponseBody)
+  override def getHomepage = httpGet(mainPage).map(_.getResponseBody)
 
-  /** fetches the currently published episodes */
-  def fetch(): Future[Seq[Episode]] = {
-
-    getHomepage flatMap { html =>
-      val ids = extractIds(html)
-      val all = ids.map(this.get(_))
-      Future.sequence(all)
-    }
-
-  }
-
-  def get(id: EpisodeId): scala.concurrent.Future[Episode] = {
+  override def get(id: EpisodeId) = {
     httpGet(info.format(id.value)).map{r => read[Episode](r.getResponseBody)}
   }
 

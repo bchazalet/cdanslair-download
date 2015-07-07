@@ -51,7 +51,7 @@ object DownloadApp extends App {
     val undownloadedF = client.fetch().map { episodes =>
       val eps = episodes.sorted(Episodes.NewestToOldest)
       val files = outputFolder.listFiles
-      val todo = eps.filter(ep => !Episode.isPresent(files.map(_.getName), ep))
+      val todo = eps.filter(ep => !Episode.isPresent(ep, files.map(_.getName)))
       println(s"There are ${todo.size} episodes to download:")
       todo.foreach(ep => println(s"${ep.startedAt.toString(format)} -> ${ep.id} - ${ep.sous_titre}"))
       todo

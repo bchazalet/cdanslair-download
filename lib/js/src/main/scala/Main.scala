@@ -8,18 +8,27 @@ import dom.document
 
 object MainApp extends js.JSApp {
 
-  def main(): Unit = {
-    val fs = g.require("fs")
-    val path = g.require("path")
+  val fs = g.require("fs")
+  // val path = g.require("path")
 
-    fs.readdir("/Users/bchazalet/Downloads", { (err: js.Dynamic, files: js.Array[String]) =>
-        jQuery("body").append("<ul>")
-        files.foreach{ (filename: String) =>
-            jQuery("body").append("<li>" + filename + "</li>")
-        }
-        jQuery("body").append("</ul>")
-    })
-    println("a test in console")
+  def main(): Unit = {
+    val filenames = listFiles("/Users/bchazalet/Downloads")
+
+    display(filenames)
+
+    // println("a test in console")
+  }
+
+  def display(filenames: Seq[String]) = {
+    jQuery("body").append("<ul>")
+    filenames.foreach{ (filename: String) =>
+        jQuery("body").append("<li>" + filename + "</li>")
+    }
+    jQuery("body").append("</ul>")
+  }
+
+  def listFiles(path: String): Seq[String] = {
+    fs.readdirSync(path).asInstanceOf[js.Array[String]]
   }
 
 }

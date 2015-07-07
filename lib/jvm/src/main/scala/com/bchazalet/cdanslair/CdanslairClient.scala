@@ -8,12 +8,11 @@ import scala.concurrent.Promise
 import com.ning.http.client.Response
 import com.ning.http.client.AsyncCompletionHandler
 import scala.util.Try
-import play.api.libs.json.Json
 import upickle._
 
 class CdanslairClient(implicit ec: ExecutionContext) {
   import CdanslairClient._
-
+  
   val client = new AsyncHttpClient()
 
   val mainPage = "http://pluzz.francetv.fr/videos/c_dans_lair.html"

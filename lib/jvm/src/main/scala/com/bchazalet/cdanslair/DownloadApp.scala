@@ -10,11 +10,11 @@ import org.joda.time.DateTime
 import org.joda.time.format.DateTimeFormat
 import org.joda.time.format.DateTimeFormatter
 import com.bchazalet.cdanslair.CancelEventStream._
-import play.api.libs.json.Json
 import java.net.URL
 import java.io.File
 
 object DownloadApp extends App {
+  import Episodes.EpisodeFormattedDate // for implicit date conversion
 
   val defaultVlc = "/Applications/VLC.app/Contents/MacOS/VLC"
 
@@ -49,12 +49,12 @@ object DownloadApp extends App {
     val client = new CdanslairClient()
 
     val undownloadedF = client.fetch().map { episodes =>
-      val eps = episodes.sortWith(_ > _) // most recent first
+      val eps = episodes.sorted(Episodes.NewestToOldest) // most recent first
       val files = outputFolder.listFiles
       def isPresent(ep: Episode): Boolean = files.find(_.getName.startsWith(ep.id.value)).isDefined
       val todo = eps.filter(!isPresent(_))
       println(s"There are ${todo.size} episodes to download:")
-      todo.foreach(ep => println(s"${new DateTime(ep.diffusion.publishedAt).toString(format)} -> ${ep.id} - ${ep.sous_titre}"))
+      todo.foreach(ep => println(s"${ep.startedAt.toString(format)} -> ${ep.id} - ${ep.sous_titre}"))
       todo
     }.andThen { case _ => client.close() }
 
@@ -81,7 +81,7 @@ object DownloadApp extends App {
       val all = undownloaded.map { ep =>
         // we're ignoring -rather silently - the videos for which we don't find the right format
         ep.videos.find(_.format == Format.M3U8_DOWNLOAD).flatMap { rightFormat =>
-          val dest = new File(outputFolder, s"${ep.id.value}-${new DateTime(ep.diffusion.publishedAt).toString(dtf)}.ts")
+          val dest = new File(outputFolder, s"${ep.id.value}-${ep.startedAt.toString(dtf)}.ts")
           println(s"Downloading episode: ${ep.id} - ${ep.sous_titre}")
           println(s"Press Ctrl+D to cancel this download only")
           if(download(rightFormat, dest, streamDownloader, eofStream.next))

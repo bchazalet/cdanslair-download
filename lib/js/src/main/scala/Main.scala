@@ -12,7 +12,7 @@ object MainApp extends js.JSApp {
     val fs = g.require("fs")
     val path = g.require("path")
 
-    fs.readdir("/Users/bchazalet/Downloads/pluzz/cdanslair", { (err: js.Dynamic, files: js.Array[String]) =>
+    fs.readdir("/Users/bchazalet/Downloads", { (err: js.Dynamic, files: js.Array[String]) =>
         jQuery("body").append("<ul>")
         files.foreach{ (filename: String) =>
             jQuery("body").append("<li>" + filename + "</li>")

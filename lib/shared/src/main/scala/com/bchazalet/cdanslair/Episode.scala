@@ -5,6 +5,9 @@ case class Episode(id: EpisodeId, sous_titre: String, diffusion: Diffusion, vide
 object Episode {
 
   /** whether the file is already present (i.e. downloaded on the file system) */
-  def isPresent(filenames: Seq[String], ep: Episode): Boolean = filenames.find(_.startsWith(ep.id.value)).isDefined
+  def isPresent(ep: Episode, filenames: Seq[String]): Boolean = filenames.exists(f => isPresent(ep, f))
+
+  /** whether the filename corresponds to the episode */
+  def isPresent(ep: Episode, filename: String): Boolean = filename.startsWith(ep.id.value)
 
 }

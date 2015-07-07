@@ -20,15 +20,16 @@ object MainApp extends js.JSApp {
 
     val client = new com.bchazalet.cdanslair.XhrCdanslairClient()
 
-    client.fetch.map(eps => show(eps))
+    client.fetch.map(eps => show(eps, filenames))
 
     // println("a test in console")
   }
 
-  def show(eps: Seq[Episode]) = {
+  def show(eps: Seq[Episode], filenames: Seq[String]) = {
     jQuery("body").append("<ul>")
     eps.foreach{ (ep: Episode) =>
-        jQuery("body").append("<li>" + ep.id + " -> " + ep.sous_titre + "</li>")
+      val status = if(Episode.isPresent(ep, filenames)) "Already downloaded" else "Available for download"
+      jQuery("body").append("<li>" + ep.sous_titre + " ~ " + status + "</li>")
     }
     jQuery("body").append("</ul>")
   }

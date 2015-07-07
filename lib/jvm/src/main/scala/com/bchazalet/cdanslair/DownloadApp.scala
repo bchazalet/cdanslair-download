@@ -46,7 +46,7 @@ object DownloadApp extends App {
 
     implicit val format = DateTimeFormat.forPattern("dd-MM-YYYY")
 
-    val client = new CdanslairClient()
+    val client = new AsyncCdanslairClient()
 
     val undownloadedF = client.fetch().map { episodes =>
       val eps = episodes.sorted(Episodes.NewestToOldest)

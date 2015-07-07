@@ -5,7 +5,7 @@ import js.Dynamic.{global => g}
 import js.DynamicImplicits._
 import org.scalajs.dom
 import dom.document
-import com.bchazalet.cdanslair.Episode
+import com.bchazalet.cdanslair.{Format, Episode}
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
 
 object MainApp extends js.JSApp {
@@ -14,19 +14,29 @@ object MainApp extends js.JSApp {
   // val path = g.require("path")
 
   def main(): Unit = {
-    val filenames = listFiles("/Users/bchazalet/Downloads/pluzz/cdanslair")
+    val folder = "/Users/bchazalet/Downloads/pluzz/cdanslair"
+    val filenames = listFiles(folder)
 
     // display(filenames)
 
     val client = new com.bchazalet.cdanslair.XhrCdanslairClient()
 
-    client.fetch.map(eps => show(eps, filenames))
+    val all = client.fetch
+
+    all.map(eps => show(eps, filenames))
+
+    all.map { eps =>
+      val ep = eps.head
+      val video = ep.videos.find(_.format == Format.M3U8_DOWNLOAD).get
+      download(video.url, folder + "/" + eps.head.id.value + "-test.ts")
+    }
 
     // println("a test in console")
   }
 
   def show(eps: Seq[Episode], filenames: Seq[String]) = {
     jQuery("body").append("<ul>")
+
     eps.foreach{ (ep: Episode) =>
       val status = if(Episode.isPresent(ep, filenames)) "Already downloaded" else "Available for download"
       jQuery("body").append("<li>" + ep.sous_titre + " ~ " + status + "</li>")
@@ -44,6 +54,17 @@ object MainApp extends js.JSApp {
 
   def listFiles(path: String): Seq[String] = {
     fs.readdirSync(path).asInstanceOf[js.Array[String]]
+  }
+
+  def download(url: String, dest: String): Unit = {
+    val exec = g.require("child_process").exec
+    val cmd = Seq("/Applications/VLC.app/Contents/MacOS/VLC", "-I", "dummy", "-vvv", url, "--sout", s"file/ts:" + dest, "vlc://quit").mkString(" ")
+
+    exec(cmd, { (error: js.Dynamic, stdout: js.Dynamic, stderr: js.Dynamic) =>
+      // command output is in stdout
+    })
+
+    println("download started")
   }
 
 }

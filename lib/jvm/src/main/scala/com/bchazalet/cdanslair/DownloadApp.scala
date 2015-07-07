@@ -49,10 +49,9 @@ object DownloadApp extends App {
     val client = new CdanslairClient()
 
     val undownloadedF = client.fetch().map { episodes =>
-      val eps = episodes.sorted(Episodes.NewestToOldest) // most recent first
+      val eps = episodes.sorted(Episodes.NewestToOldest)
       val files = outputFolder.listFiles
-      def isPresent(ep: Episode): Boolean = files.find(_.getName.startsWith(ep.id.value)).isDefined
-      val todo = eps.filter(!isPresent(_))
+      val todo = eps.filter(ep => !Episode.isPresent(files.map(_.getName), ep))
       println(s"There are ${todo.size} episodes to download:")
       todo.foreach(ep => println(s"${ep.startedAt.toString(format)} -> ${ep.id} - ${ep.sous_titre}"))
       todo

@@ -1,33 +1,10 @@
 package com.bchazalet.cdanslair
 
-import scala.util.Try
-import upickle.Js
-import upickle.key
-
-object EpisodeId {
-
-  val valid = """^\d+$""".r
-
-  implicit val epIdReader = upickle.Reader[EpisodeId]{
-    case Js.Str(str) => EpisodeId(str)
-  }
-
-}
-
-case class EpisodeId(value: String){
-  require(EpisodeId.valid.findFirstIn(value).isDefined, s"$value does not look like a valid episode id")
-}
-
 case class Episode(id: EpisodeId, sous_titre: String, diffusion: Diffusion, videos: Seq[Video])
 
-case class Video(format: String, url: String, statut: String)
+object Episode {
 
-object Format {
-
-  val HDS_AKAMAI = "hds_akamai"
-  val HLS_V5_OS = "hls_v5_os"
-  val M3U8_DOWNLOAD = "m3u8-download"
+  /** whether the file is already present (i.e. downloaded on the file system) */
+  def isPresent(filenames: Seq[String], ep: Episode): Boolean = filenames.find(_.startsWith(ep.id.value)).isDefined
 
 }
-
-case class Diffusion(timestamp: Int, @key("date_debut") startDate: String)

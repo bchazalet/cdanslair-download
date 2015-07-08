@@ -13,14 +13,19 @@ object MainApp extends js.JSApp {
   val fs = g.require("fs")
   val path = g.require("path")
 
-  val folder = "/Users/bchazalet/Downloads/pluzz/cdanslair"
+  val folder = "/Users/bchazalet/Downloads/pluzz/cdanslair-tmp"
 
   val client = new com.bchazalet.cdanslair.XhrCdanslairClient()
   val manager = new DownloadManager(new VlcDownloader(VLC.defaultPath), folder)
 
-  var autostart = false
+  var autostart = true
 
   def main(): Unit = {
+
+    // update(Idle)
+
+    // register for status update
+    manager.register(update)
 
     val filenames = listFiles(folder)
 
@@ -49,6 +54,16 @@ object MainApp extends js.JSApp {
       jQuery("#content").append(s"<li>${ep.diffusion.startDate} - ${ep.sous_titre} ~ $status</li>")
     }
     jQuery("#content").append("</ul>")
+  }
+
+  def update(status: DownloadStatus): Unit = {
+    val msg = status match {
+      case Idle => "Nothing is being downloaded"
+      case Downloading(ep, progress) => s"Downloading ${ep.diffusion.startDate} - ${ep.sous_titre} - $progress%"
+    }
+
+    // FIXME does not seem to work the first time
+    jQuery("#status").text(s"$msg")
   }
 
   def display(filenames: Seq[String]) = {

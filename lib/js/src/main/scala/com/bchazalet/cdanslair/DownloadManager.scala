@@ -11,6 +11,8 @@ class DownloadManager(downloader: StreamDownloader, destFolder: String) {
 
   var current = Option.empty[(Episode, StreamDownload)]
 
+  var handlers = Seq.empty[DownloadStatus.Handler]
+
   /** add to the queue of episode to be downloaded */
   def add(ep: Episode) = {
     queue += ep
@@ -24,6 +26,20 @@ class DownloadManager(downloader: StreamDownloader, destFolder: String) {
     start() // start the next one
   }
 
+  def register(handler: DownloadStatus.Handler): Unit = {
+    handlers = handlers :+ handler
+    sendStatus()
+  }
+
+  private def sendStatus() = {
+    val s = status()
+    handlers.foreach(h => h(s))
+  }
+
+  private def status(): DownloadStatus = {
+    current.map { case (ep, download) => Downloading(ep, 0) }.getOrElse(Idle)
+  }
+
   private def start() = {
     if(!queue.isEmpty && current.isEmpty){
       val ep = queue.dequeue
@@ -33,6 +49,7 @@ class DownloadManager(downloader: StreamDownloader, destFolder: String) {
       val download = downloader.download(video.url, dest)
       current = Option(ep, download)
     }
+    sendStatus()
   }
 
 }

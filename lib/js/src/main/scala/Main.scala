@@ -11,32 +11,30 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
 object MainApp extends js.JSApp {
 
   val fs = g.require("fs")
-  // val path = g.require("path")
+
+  val folder = "/Users/bchazalet/Downloads/pluzz/cdanslair"
+
+  val client = new com.bchazalet.cdanslair.XhrCdanslairClient()
+  val manager = new DownloadManager(new VlcDownloader(VLC.defaultPath), folder)
 
   def main(): Unit = {
-    val folder = "/Users/bchazalet/Downloads/pluzz/cdanslair"
+
     val filenames = listFiles(folder)
-
-    val client = new com.bchazalet.cdanslair.XhrCdanslairClient()
-
-    val downloader = new VlcDownloader(VLC.defaultPath)
 
     val all = client.fetch
 
     all.map(eps => show(eps, filenames))
 
-    all.map { eps =>
-      val ep = eps.head
-      val video = ep.videos.find(_.format == Format.M3U8_DOWNLOAD).get
-      val download = downloader.download(video.url, folder + "/" + eps.head.id.value + "-test.ts")
-      import scala.scalajs.js.timers._
-      setTimeout(5000) {
-        println("cancelling download")
-        download.cancel
-      }
-    }
+    // queue all for download
+    all.map { _.foreach { ep =>
+      println(s"adding ${ep.id} for download")
+      manager.add(ep)
+    }}
 
   }
+
+  @JSExport
+  def cancel() = manager.cancel()
 
   def show(eps: Seq[Episode], filenames: Seq[String]) = {
     jQuery("body").append("<ul>")
@@ -59,22 +57,5 @@ object MainApp extends js.JSApp {
   def listFiles(path: String): Seq[String] = {
     fs.readdirSync(path).asInstanceOf[js.Array[String]]
   }
-
-  // def download(url: URL, dest: String): Unit = {
-  //   val spawn = g.require("child_process").spawn
-  //   val cmd = "/Applications/VLC.app/Contents/MacOS/VLC"
-  //   val args = js.Array("-I", "dummy", "-vvv", url, "--sout", s"file/ts:" + dest, "vlc://quit")
-  //
-  //   println("starting the download")
-  //   println(cmd)
-  //
-  //   val child = spawn(cmd, args, js.Dynamic.literal(stdio = "ignore"))
-  //
-  //   child.on("close", { (code: Int) =>
-  //     println("process exit code " + code)
-  //   })
-  //
-  //   println("download started")
-  // }
 
 }

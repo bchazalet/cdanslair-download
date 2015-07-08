@@ -1,22 +1,23 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Hello World!</title>
+    <title>Cdanslair download manager</title>
+    <link rel="stylesheet" href="main.css">
   </head>
   <body>
-    <h1>Hello World!</h1>
-    We are using io.js <script>document.write(process.version)</script>
-    and Electron <script>document.write(process.versions['electron'])</script>
 
     <script type="text/javascript" src="http://cdn.jsdelivr.net/jquery/2.1.1/jquery.js"></script>
     <script type="text/javascript" src="../lib/js/target/scala-2.11/cdanslairlib-jsdeps.js"></script>
     <script type="text/javascript" src="../lib/js/target/scala-2.11/cdanslairlib-fastopt.js"></script>
 
-    <script type="text/javascript">
-      MainApp().main();
-    </script>
+    <script type="text/javascript"> MainApp().main();</script>
 
-    <button id="cancel-button" type="button" onclick="MainApp().cancel()">Cancel current download</button>
+    <div id="container">
+      <div id="content" class="center">
+      <!-- generated content-->
+      </div>
 
+      <button id="cancel-button" type="button" onclick="MainApp().cancel()">Cancel current download</button>
+  </div>
   </body>
 </html>

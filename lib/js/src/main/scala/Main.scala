@@ -17,6 +17,8 @@ object MainApp extends js.JSApp {
   val client = new com.bchazalet.cdanslair.XhrCdanslairClient()
   val manager = new DownloadManager(new VlcDownloader(VLC.defaultPath), folder)
 
+  var autostart = false
+
   def main(): Unit = {
 
     val filenames = listFiles(folder)
@@ -25,12 +27,13 @@ object MainApp extends js.JSApp {
 
     all.map(eps => show(eps, filenames))
 
-    // queue all available for download
-    all.map { _.filter(ep => !Episode.isPresent(ep, filenames)).foreach { ep =>
-      println(s"adding ${ep.id} for download")
-      manager.add(ep)
-    }}
-
+    if(autostart){
+      // queue all available for download
+      all.map { _.filter(ep => !Episode.isPresent(ep, filenames)).foreach { ep =>
+        println(s"adding ${ep.id} for download")
+        manager.add(ep)
+      }}
+    }
   }
 
   @JSExport
@@ -41,9 +44,9 @@ object MainApp extends js.JSApp {
 
     eps.foreach{ (ep: Episode) =>
       val status = if(Episode.isPresent(ep, filenames)) "Already downloaded" else "Available for download"
-      jQuery("body").append("<li>" + ep.sous_titre + " ~ " + status + "</li>")
+      jQuery("#content").append(s"<li>${ep.diffusion.startDate} - ${ep.sous_titre} ~ $status</li>")
     }
-    jQuery("body").append("</ul>")
+    jQuery("#content").append("</ul>")
   }
 
   def display(filenames: Seq[String]) = {

@@ -1,7 +1,7 @@
 import scala.scalajs.js
+import js.Dynamic.{global => g}
 import js.annotation.JSExport
 import org.scalajs.jquery.jQuery
-import js.Dynamic.{global => g}
 import js.DynamicImplicits._
 import org.scalajs.dom
 import dom.document
@@ -22,12 +22,10 @@ object MainApp extends js.JSApp {
 
   def main(): Unit = {
 
-    // update(Idle)
-
     // register for status update
     manager.register(update)
 
-    val filenames = listFiles(folder)
+    val filenames = FileUtils.listFiles(folder)
 
     val all = client.fetch
 
@@ -50,20 +48,26 @@ object MainApp extends js.JSApp {
 
     eps.foreach{ (ep: Episode) =>
       val fileOnDisk = Episode.find(ep, filenames).map(f => path.join(folder, f).asInstanceOf[String])
-      val status = fileOnDisk.map(f => s"Already downloaded (${filesize(f)}MB)").getOrElse("Available for download")
+      val status = fileOnDisk.map(f => s"Already downloaded (${FileUtils.filesize(f)}MB)").getOrElse("Available for download")
       jQuery("#content").append(s"<li>${ep.diffusion.startDate} - ${ep.sous_titre} ~ $status</li>")
     }
     jQuery("#content").append("</ul>")
   }
 
+  val AVERAGE_SIZE = 470 // MB
+
   def update(status: DownloadStatus): Unit = {
     val msg = status match {
       case Idle => "Nothing is being downloaded"
-      case Downloading(ep, progress) => s"Downloading ${ep.diffusion.startDate} - ${ep.sous_titre} - $progress%"
+      case Downloading(ep, progress) => s"Downloading ${ep.diffusion.startDate} - ${ep.sous_titre} - ${progress}MB (or ~${percent(progress)}%)"
     }
 
     // FIXME does not seem to work the first time
     jQuery("#status").text(s"$msg")
+  }
+
+  private def percent(progress: Int): Int = {
+    scala.math.round(progress.toFloat * 100f/AVERAGE_SIZE.toFloat)
   }
 
   def display(filenames: Seq[String]) = {
@@ -74,13 +78,6 @@ object MainApp extends js.JSApp {
     jQuery("body").append("</ul>")
   }
 
-  def listFiles(path: String): Seq[String] = {
-    fs.readdirSync(path).asInstanceOf[js.Array[String]]
-  }
 
-  /** filesize in MB */
-  def filesize(filePath: String): Int = {
-    fs.statSync(filePath).size.asInstanceOf[Int] / (1024 * 1024)
-  }
 
 }

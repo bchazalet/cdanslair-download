@@ -5,7 +5,7 @@ import js.Dynamic.{global => g}
 import js.DynamicImplicits._
 import org.scalajs.dom
 import dom.document
-import com.bchazalet.cdanslair.{Format, Episode}
+import com.bchazalet.cdanslair._
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
 
 object MainApp extends js.JSApp {
@@ -17,9 +17,9 @@ object MainApp extends js.JSApp {
     val folder = "/Users/bchazalet/Downloads/pluzz/cdanslair"
     val filenames = listFiles(folder)
 
-    // display(filenames)
-
     val client = new com.bchazalet.cdanslair.XhrCdanslairClient()
+
+    val downloader = new VlcDownloader(VLC.defaultPath)
 
     val all = client.fetch
 
@@ -28,10 +28,14 @@ object MainApp extends js.JSApp {
     all.map { eps =>
       val ep = eps.head
       val video = ep.videos.find(_.format == Format.M3U8_DOWNLOAD).get
-      download(video.url, folder + "/" + eps.head.id.value + "-test.ts")
+      val download = downloader.download(video.url, folder + "/" + eps.head.id.value + "-test.ts")
+      import scala.scalajs.js.timers._
+      setTimeout(5000) {
+        println("cancelling download")
+        download.cancel
+      }
     }
 
-    // println("a test in console")
   }
 
   def show(eps: Seq[Episode], filenames: Seq[String]) = {
@@ -56,21 +60,21 @@ object MainApp extends js.JSApp {
     fs.readdirSync(path).asInstanceOf[js.Array[String]]
   }
 
-  def download(url: String, dest: String): Unit = {
-    val spawn = g.require("child_process").spawn
-    val cmd = "/Applications/VLC.app/Contents/MacOS/VLC"
-    val args = js.Array("-I", "dummy", "-vvv", url, "--sout", s"file/ts:" + dest, "vlc://quit")
-
-    println("starting the download")
-    println(cmd)
-
-    val child = spawn(cmd, args, js.Dynamic.literal(stdio = "ignore"))
-
-    child.on("close", { (code: Int) =>
-      println("process exit code " + code)
-    })
-
-    println("download started")
-  }
+  // def download(url: URL, dest: String): Unit = {
+  //   val spawn = g.require("child_process").spawn
+  //   val cmd = "/Applications/VLC.app/Contents/MacOS/VLC"
+  //   val args = js.Array("-I", "dummy", "-vvv", url, "--sout", s"file/ts:" + dest, "vlc://quit")
+  //
+  //   println("starting the download")
+  //   println(cmd)
+  //
+  //   val child = spawn(cmd, args, js.Dynamic.literal(stdio = "ignore"))
+  //
+  //   child.on("close", { (code: Int) =>
+  //     println("process exit code " + code)
+  //   })
+  //
+  //   println("download started")
+  // }
 
 }

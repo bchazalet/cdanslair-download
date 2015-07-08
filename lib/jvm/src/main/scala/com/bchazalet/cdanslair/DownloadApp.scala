@@ -16,12 +16,10 @@ import java.io.File
 object DownloadApp extends App {
   import Episodes.EpisodeFormattedDate // for implicit date conversion
 
-  val defaultVlc = "/Applications/VLC.app/Contents/MacOS/VLC"
-
   val appVersion = "1.1"
   val appName = "cdanslair-download"
 
-  case class Config(out: File = new File("."), vlcPath: File = new File(defaultVlc))
+  case class Config(out: File = new File("."), vlcPath: File = new File(VLC.defaultPath))
 
   val parser = new scopt.OptionParser[Config](appName) {
     head(appName, appVersion)
@@ -65,7 +63,7 @@ object DownloadApp extends App {
 
     firstStep.right.flatMap { undownloaded =>
 
-      val sd: StreamDownloader = new VLC(config.vlcPath)
+      val sd: StreamDownloader = new VlcDownloader(config.vlcPath)
       tryDownload(undownloaded, sd, outputFolder)
 
     }

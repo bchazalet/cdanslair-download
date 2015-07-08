@@ -25,8 +25,8 @@ object MainApp extends js.JSApp {
 
     all.map(eps => show(eps, filenames))
 
-    // queue all for download
-    all.map { _.foreach { ep =>
+    // queue all available for download
+    all.map { _.filter(ep => !Episode.isPresent(ep, filenames)).foreach { ep =>
       println(s"adding ${ep.id} for download")
       manager.add(ep)
     }}

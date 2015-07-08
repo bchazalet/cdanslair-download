@@ -11,6 +11,7 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
 object MainApp extends js.JSApp {
 
   val fs = g.require("fs")
+  val path = g.require("path")
 
   val folder = "/Users/bchazalet/Downloads/pluzz/cdanslair"
 
@@ -43,7 +44,8 @@ object MainApp extends js.JSApp {
     jQuery("body").append("<ul>")
 
     eps.foreach{ (ep: Episode) =>
-      val status = if(Episode.isPresent(ep, filenames)) "Already downloaded" else "Available for download"
+      val fileOnDisk = Episode.find(ep, filenames).map(f => path.join(folder, f).asInstanceOf[String])
+      val status = fileOnDisk.map(f => s"Already downloaded (${filesize(f)}MB)").getOrElse("Available for download")
       jQuery("#content").append(s"<li>${ep.diffusion.startDate} - ${ep.sous_titre} ~ $status</li>")
     }
     jQuery("#content").append("</ul>")
@@ -59,6 +61,11 @@ object MainApp extends js.JSApp {
 
   def listFiles(path: String): Seq[String] = {
     fs.readdirSync(path).asInstanceOf[js.Array[String]]
+  }
+
+  /** filesize in MB */
+  def filesize(filePath: String): Int = {
+    fs.statSync(filePath).size.asInstanceOf[Int] / (1024 * 1024)
   }
 
 }

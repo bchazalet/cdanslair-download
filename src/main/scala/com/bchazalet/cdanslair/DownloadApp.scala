@@ -20,7 +20,7 @@ object DownloadApp extends App {
   val appVersion = "1.1"
   val appName = "pluzz-download"
 
-  case class Config(out: File = new File("."), vlcPath: File = new File(defaultVlc))
+  case class Config(out: File = new File("."), vlcPath: File = new File(defaultVlc), proxy: Option[SocksProxy] = None)
 
   val parser = new scopt.OptionParser[Config](appName) {
     head(appName, appVersion)
@@ -31,6 +31,12 @@ object DownloadApp extends App {
 
     opt[File]("vlc") valueName("<file>") action { (x, c) =>
       c.copy(vlcPath = x) } text(s"the path to your vlc program. Default points to $defaultVlc")
+
+    opt[String]('p', "proxy") valueName("socksProxy") action { (x, c) =>
+      c.copy(proxy = SocksProxy.from(x)) } text("a socks proxy for the vlc to use when downloading the video") validate(s =>
+        SocksProxy.from(s).map(_ => success).getOrElse(failure("proxy must have the following format host:port"))
+      )
+
   }
 
   parser.parse(args, Config()) match {
@@ -65,7 +71,7 @@ object DownloadApp extends App {
 
     firstStep.right.flatMap { undownloaded =>
 
-      val sd: StreamDownloader = new VLC(config.vlcPath)
+      val sd: StreamDownloader = new VLC(config.vlcPath, config.proxy)
       tryDownload(undownloaded, sd, outputFolder)
 
     }

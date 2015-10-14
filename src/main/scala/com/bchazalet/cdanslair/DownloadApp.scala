@@ -48,6 +48,11 @@ object DownloadApp extends App {
       c.copy(replay = x)
     }
 
+    opt[java.net.URI]('m', "main-page") valueName("<url>") action { (x, c) =>
+      val attempt = Replay.generic(x.toString)
+      c.copy(replay = attempt)
+    } text("the url of the main page for a given replay that you'd try to download. This overrides the -r argument.")
+
 
   }
 
@@ -70,7 +75,7 @@ object DownloadApp extends App {
       val files = outputFolder.listFiles
       def isPresent(ep: Episode): Boolean = files.find(_.getName.startsWith(ep.id.value)).isDefined
       val todo = eps.filter(!isPresent(_))
-      println(s"There are ${todo.size} episodes to download for reaply '${config.replay.name}':")
+      println(s"There are ${todo.size} episodes to download for replay '${config.replay.name}':")
       todo.foreach(ep => println(s"${ep.diffusion.publishedAt.toString(format)} -> ${ep.id} - ${ep.sous_titre}"))
       todo
     }.andThen { case _ => client.close() }

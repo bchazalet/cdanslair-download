@@ -20,7 +20,14 @@ object DownloadApp extends App {
   val appVersion = "1.1"
   val appName = "pluzz-download"
 
-  case class Config(out: File = new File("."), vlcPath: File = new File(defaultVlc), proxy: Option[SocksProxy] = None)
+  case class Config(out: File = new File("."), vlcPath: File = new File(defaultVlc), replay: Replay = Replay.Cdanslair, proxy: Option[SocksProxy] = None)
+
+  val replays = Map(
+    "accuse" -> Replay.FaitesEntrerLaccuse,
+    "cdanslair" -> Replay.Cdanslair
+  )
+
+  implicit val replayRead: scopt.Read[Replay] = scopt.Read.reads(replays.get(_).get)
 
   val parser = new scopt.OptionParser[Config](appName) {
     head(appName, appVersion)
@@ -37,6 +44,11 @@ object DownloadApp extends App {
         SocksProxy.from(s).map(_ => success).getOrElse(failure("proxy must have the following format host:port"))
       )
 
+    opt[Replay]('r', "replay") valueName("accuse|cdanslair") action { (x, c) =>
+      c.copy(replay = x)
+    }
+
+
   }
 
   parser.parse(args, Config()) match {
@@ -51,14 +63,14 @@ object DownloadApp extends App {
 
     implicit val format = DateTimeFormat.forPattern("dd-MM-YYYY")
 
-    val client = new PluzzClient(Replay.FaitesEntreLaccuse)
+    val client = new PluzzClient(config.replay)
 
     val undownloadedF = client.fetch().map { episodes =>
       val eps = episodes.sortWith(_ > _) // most recent first
       val files = outputFolder.listFiles
       def isPresent(ep: Episode): Boolean = files.find(_.getName.startsWith(ep.id.value)).isDefined
       val todo = eps.filter(!isPresent(_))
-      println(s"There are ${todo.size} episodes to download:")
+      println(s"There are ${todo.size} episodes to download for reaply '${config.replay.name}':")
       todo.foreach(ep => println(s"${ep.diffusion.publishedAt.toString(format)} -> ${ep.id} - ${ep.sous_titre}"))
       todo
     }.andThen { case _ => client.close() }

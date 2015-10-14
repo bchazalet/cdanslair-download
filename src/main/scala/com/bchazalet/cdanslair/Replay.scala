@@ -1,7 +1,7 @@
 package com.bchazalet.cdanslair
 
 /** Represents a series that is available for replay */
-case class Replay(mainPage: String, extract: Html => Seq[EpisodeId])
+case class Replay(name: String, mainPage: String, extract: Html => Seq[EpisodeId])
 
 object Replay {
 
@@ -22,9 +22,9 @@ object Replay {
       (olderOnes :+ latest).map(s => EpisodeId(s))
     }
 
-    Replay("http://pluzz.francetv.fr/videos/c_dans_lair.html", extractIds _)
+    Replay("Cdanslair", "http://pluzz.francetv.fr/videos/c_dans_lair.html", extractIds _)
   }
 
-  val FaitesEntreLaccuse = Replay("http://pluzz.francetv.fr/videos/faites_entrer_l_accuse.html", html => pluzzLatest(html).map(s => EpisodeId(s)).toSeq)
+  val FaitesEntrerLaccuse = Replay("Faites entrer l'accusé", "http://pluzz.francetv.fr/videos/faites_entrer_l_accuse.html", html => pluzzLatest(html).map(s => EpisodeId(s)).toSeq)
 
 }

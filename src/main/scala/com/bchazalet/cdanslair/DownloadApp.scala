@@ -95,6 +95,11 @@ object DownloadApp extends App {
 
   }
 
+  def forFilename(s: String): String = {
+    val spaceRep = '_'
+    s.replace(" ", spaceRep.toString).filter(c => c.isLetterOrDigit || c == spaceRep)
+  }
+
   /** tries download the given list of episodes */
   def tryDownload(undownloaded: Seq[Episode], streamDownloader: StreamDownloader, outputFolder: File)(implicit dtf: DateTimeFormatter): Either[CdlrError, Seq[Episode]] = {
     val eofStream: CancelEventStream = new ConsoleEOFEventStream()
@@ -103,7 +108,8 @@ object DownloadApp extends App {
       val all = undownloaded.map { ep =>
         // we're ignoring -rather silently - the videos for which we don't find the right format
         ep.videos.find(_.format == Format.M3U8_DOWNLOAD).flatMap { rightFormat =>
-          val dest = new File(outputFolder, s"${ep.id.value}-${ep.diffusion.publishedAt.toString(dtf)}.ts")
+          val sDesc = forFilename(ep.sous_titre)
+          val dest = new File(outputFolder, s"${ep.id.value}-${ep.diffusion.publishedAt.toString(dtf)}-$sDesc.ts")
           println(s"Downloading episode: ${ep.id} - ${ep.sous_titre}")
           println(s"Press Ctrl+D to cancel this download only")
           if(download(rightFormat, dest, streamDownloader, eofStream.next))

@@ -17,7 +17,7 @@ object DownloadApp extends App {
 
   val defaultVlc = "/Applications/VLC.app/Contents/MacOS/VLC"
 
-  val appVersion = "1.1"
+  val appVersion = "1.2"
   val appName = "pluzz-download"
 
   case class Config(out: File = new File("."), vlcPath: File = new File(defaultVlc), replay: Replay = Replay.Cdanslair, proxy: Option[SocksProxy] = None)

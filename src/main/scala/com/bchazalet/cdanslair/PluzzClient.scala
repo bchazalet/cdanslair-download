@@ -31,7 +31,12 @@ class PluzzClient(replay: Replay)(implicit ec: ExecutionContext) {
   }
 
   def get(id: EpisodeId): scala.concurrent.Future[Episode] = {
-    httpGet(info.format(id.value)).map{r => Episode.epReads.reads(Json.parse(r.getResponseBody)).get}
+    httpGet(info.format(id.value)).flatMap { r =>
+      val ep = Episode.epReads.reads(Json.parse(r.getResponseBody)).get
+      // hack to select the best defnitions videos, if possible
+      val bestVideosF = ep.videos.map(vid => bestDefinition(vid))
+      Future.sequence(bestVideosF).map(bestVideos => ep.copy(videos = bestVideos))
+    }
   }
 
   def close() = {
@@ -56,6 +61,19 @@ object PluzzClient {
     })
 
     promise.future
+  }
+
+  /** tries to auto-select the best definition (hack around the fact that now VLC can't pick up the best ones on its own)*/
+  def bestDefinition(vid: Video)(implicit ec: ExecutionContext, client: AsyncHttpClient): Future[Video] = {
+    if(vid.format == Format.M3U8_DOWNLOAD){
+      // download the playlist file, and keep the last line, which should be the best definition
+      PluzzClient.httpGet(vid.url).map { r =>
+        val lastLine = r.getResponseBody.split("\n").last
+        vid.copy(url = lastLine)
+      }
+    } else {
+      Future.successful(vid)
+    }
   }
 
 }

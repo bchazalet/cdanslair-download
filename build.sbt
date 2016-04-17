@@ -3,7 +3,7 @@ resolvers += "Typesafe Repository" at "http://repo.typesafe.com/typesafe/release
 
 enablePlugins(JavaAppPackaging)
 
-version := "1.2"
+version := "1.3"
 
 scalaVersion := "2.11.6"
 

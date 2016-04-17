@@ -11,26 +11,11 @@ import scala.util.Try
 import play.api.libs.json.Json
 
 class PluzzClient(replay: Replay)(implicit ec: ExecutionContext) {
+  import PluzzClient._
 
-  val client = new AsyncHttpClient()
+  implicit val client = new AsyncHttpClient()
 
   val info = "http://webservices.francetelevisions.fr/tools/getInfosOeuvre/v2/?idDiffusion=%s&catalogue=Pluzz"
-
-  protected def httpGet(url: String): Future[Response] = {
-    val promise = Promise.apply[Response]()
-    client.prepareGet(url).execute(new AsyncCompletionHandler[Unit](){
-
-        override def onCompleted(response: Response): Unit = {
-            promise.complete(Try(response))
-        }
-
-        override def onThrowable(t: Throwable) = {
-            promise.failure(t)
-        }
-    })
-
-    promise.future
-  }
 
   protected def getHomepage: Future[String] = httpGet(replay.mainPage).map(_.getResponseBody)
 
@@ -51,6 +36,26 @@ class PluzzClient(replay: Replay)(implicit ec: ExecutionContext) {
 
   def close() = {
     client.close()
+  }
+
+}
+
+object PluzzClient {
+
+  def httpGet(url: String)(implicit client: AsyncHttpClient): Future[Response] = {
+    val promise = Promise.apply[Response]()
+    client.prepareGet(url).execute(new AsyncCompletionHandler[Unit](){
+
+        override def onCompleted(response: Response): Unit = {
+            promise.complete(Try(response))
+        }
+
+        override def onThrowable(t: Throwable) = {
+            promise.failure(t)
+        }
+    })
+
+    promise.future
   }
 
 }

@@ -128,7 +128,8 @@ object DownloadApp extends App {
 
   /** downloads the video stream and blocks until the stream is completed or the cancel event */
   def download(vid: Video, dest: File, downloader: StreamDownloader, cancel: Future[CancelEvent])(implicit ec: ExecutionContext): Boolean = {
-    val current = downloader.download(new URL(vid.url), dest)
+    val bestVideo = Await.result(bestDefinition(vid), 20 seconds)
+    val current = downloader.download(new URL(bestVideo.url), dest)
     val both = Future.firstCompletedOf(Seq(cancel, current.future))
     Await.ready(both, 2 hours)
     if(cancel.isCompleted){
@@ -138,6 +139,21 @@ object DownloadApp extends App {
       false
     } else {
       true
+    }
+  }
+
+  /** tries to auto-select the best definition (hack around the fact that now VLC can't pick up the best ones on its own)*/
+  def bestDefinition(vid: Video): Future[Video] = {
+    import com.ning.http.client.AsyncHttpClient
+    if(vid.format == Format.M3U8_DOWNLOAD){
+      // download the playlist file, and keep the last line, which should be the best definition
+      val client = new AsyncHttpClient()
+      PluzzClient.httpGet(vid.url)(client).map { r =>
+        val lastLine = r.getResponseBody.split("\n").last
+        vid.copy(url = lastLine)
+      }
+    } else {
+      Future.successful(vid)
     }
   }
 }

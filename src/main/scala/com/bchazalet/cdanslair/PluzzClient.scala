@@ -15,7 +15,7 @@ class PluzzClient(replay: Replay)(implicit ec: ExecutionContext) {
 
   implicit val client = new AsyncHttpClient()
 
-  val info = "http://webservices.francetelevisions.fr/tools/getInfosOeuvre/v2/?idDiffusion=%s&catalogue=Pluzz"
+  val info = "https://sivideo.webservices.francetelevisions.fr/tools/getInfosOeuvre/v2/?idDiffusion=%s"
 
   protected def getHomepage: Future[String] = httpGet(replay.mainPage).map(_.getResponseBody)
 
@@ -24,18 +24,20 @@ class PluzzClient(replay: Replay)(implicit ec: ExecutionContext) {
 
     getHomepage flatMap { html =>
       val ids = replay.extract(html)
-      val all = ids.map(this.get(_))
-      Future.sequence(all)
+      val all = ids.distinct.map(this.get)
+      Future.sequence(all).map(_.flatten)
     }
 
   }
 
-  def get(id: EpisodeId): scala.concurrent.Future[Episode] = {
+  def get(id: EpisodeId): scala.concurrent.Future[Option[Episode]] = {
     httpGet(info.format(id.value)).flatMap { r =>
-      val ep = Episode.epReads.reads(Json.parse(r.getResponseBody)).get
-      // hack to select the best defnitions videos, if possible
-      val bestVideosF = ep.videos.map(vid => bestDefinition(vid))
-      Future.sequence(bestVideosF).map(bestVideos => ep.copy(videos = bestVideos))
+      val ep = Episode.epReads.reads(Json.parse(r.getResponseBody)).asOpt
+      ep.map { ep =>
+        // hack to select the best defnitions videos, if possible
+        val bestVideosF = ep.videos.map(vid => bestDefinition(vid))
+        Future.sequence(bestVideosF).map(bestVideos => Option(ep.copy(videos = bestVideos)))
+      }.getOrElse(Future.successful(None))
     }
   }
 

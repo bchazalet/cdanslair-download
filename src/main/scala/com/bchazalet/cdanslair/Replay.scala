@@ -7,28 +7,20 @@ object Replay {
 
   implicit def optionToSeq(o: Option[EpisodeId]) = o.toSeq
 
-  def generic(mainPage: String) = Replay("", mainPage, pluzzLatest)
+  def generic(mainPage: String) = Replay("", mainPage, pluzz)
 
-  // <a class="video" id="current_video" href="http://info.francetelevisions.fr/?id-video=121434851" style="display: none;">Voir la vidéo</a>
-  val pluzzLatestPattern = """href="http://info.francetelevisions.fr/\?id-video=(\d+)"""".r
+  // <a href="//www.france.tv/france-5/c-dans-l-air/137347-emission-du-vendredi-12-mai-2017.html"
+  //     title="C dans l&#039;air"
+  //     class="c_black link-all"
+  //     data-link="player"
+  //     data-video="157542289"
+  //     data-video-content="137347">
+  val pattern = """data-video="(\d+)"""".r
 
-  def pluzzLatest(html: Html): Option[EpisodeId] = pluzzLatestPattern.findFirstMatchIn(html).map(_.group(1)).map(s => EpisodeId(s))
+  def pluzz(html: Html): Seq[EpisodeId] = pattern.findAllMatchIn(html).map(_.group(1)).toList.map(s => EpisodeId(s))
 
-  val Cdanslair = {
+  val Cdanslair = Replay("Cdanslair", "https://www.france.tv/france-5/c-dans-l-air/", pluzz)
 
-    /** extract episodes ids from the home page */
-    def extractIds(html: String): Seq[EpisodeId] = {
-      //<a href="/videos/c_dans_lair_,121434783.html" class="row"><div class="autre-emission-c4">Emission du 29-04 à 17:46</div><div class="autre-emission-c3">En replay</div></a>
-      val olderPattern = """href="/videos/c_dans_lair_,(\d+).html"""".r
-
-      val latest = pluzzLatest(html).get // there has to be a latest!
-      val olderOnes = olderPattern.findAllMatchIn(html).map(_.group(1)).toList.map(s => EpisodeId(s))
-      (olderOnes :+ latest)
-    }
-
-    Replay("Cdanslair", "http://pluzz.francetv.fr/videos/c_dans_lair.html", extractIds _)
-  }
-
-  val FaitesEntrerLaccuse = Replay("Faites entrer l'accusé", "http://pluzz.francetv.fr/videos/faites_entrer_l_accuse.html", pluzzLatest)
+  val FaitesEntrerLaccuse = Replay("Faites entrer l'accusé", "https://www.france.tv/france-2/faites-entrer-l-accuse/", pluzz)
 
 }

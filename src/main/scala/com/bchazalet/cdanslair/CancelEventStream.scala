@@ -2,10 +2,15 @@ package com.bchazalet.cdanslair
 
 import scala.concurrent._
 
-/** a stream of cancel events */
-trait CancelEventStream {
+object CancelEventStream {
   
   type CancelEvent = Unit
+  
+}
+
+/** a stream of cancel events */
+trait CancelEventStream {
+  import CancelEventStream._
   
   def next: Future[CancelEvent]
   

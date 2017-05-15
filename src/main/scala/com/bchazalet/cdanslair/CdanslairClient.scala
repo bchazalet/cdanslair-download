@@ -5,50 +5,54 @@ import scala.concurrent.Future
 
 class CdanslairClient(implicit ec: ExecutionContext) {
   import CdanslairClient._
-  
+
   val builder = new com.ning.http.client.AsyncHttpClientConfig.Builder()
   val client = new play.api.libs.ws.ning.NingWSClient(builder.build())
-  
-  val mainPage = "http://pluzz.francetv.fr/videos/c_dans_lair.html"
-  val info = "http://webservices.francetelevisions.fr/tools/getInfosOeuvre/v2/?idDiffusion=%s&catalogue=Pluzz"
-  
+
+  val mainPage = "https://www.france.tv/france-5/c-dans-l-air/"
+  val info = "https://sivideo.webservices.francetelevisions.fr/tools/getInfosOeuvre/v2/?idDiffusion=%s"
+
   protected def getHomepage: Future[String] = {
     client.url(mainPage).get.map(_.body)
   }
-  
+
   /** fetches the currently published episodes */
   def fetch(): Future[Seq[Episode]] = {
-    
+
     getHomepage flatMap { html =>
       val ids = extractIds(html)
-      val all = ids.map(this.get(_))
-      Future.sequence(all)
+      val all = ids.distinct.map(this.get)
+      Future.sequence(all).map(_.flatten)
     }
-    
+
   }
-  
-  def get(id: EpisodeId): scala.concurrent.Future[Episode] = {
-    client.url(info.format(id.value)).get.map{r => Episode.epReads.reads(r.json).get}
+
+  def get(id: EpisodeId): scala.concurrent.Future[Option[Episode]] = {
+    client.url(info.format(id.value)).get.map { r =>
+      Episode.epReads.reads(r.json).asOpt
+    }
   }
-  
+
   def close() = {
     client.close()
   }
-  
+
 }
 
 object CdanslairClient {
-  
+
   /** extract episodes ids from the home page */
   def extractIds(html: String): Seq[EpisodeId] = {
-    // <a class="video" id="current_video" href="http://info.francetelevisions.fr/?id-video=121434851" style="display: none;">Voir la vidéo</a>
-    //<a href="/videos/c_dans_lair_,121434783.html" class="row"><div class="autre-emission-c4">Emission du 29-04 à 17:46</div><div class="autre-emission-c3">En replay</div></a>
-    val latestPattern = """href="http://info.francetelevisions.fr/\?id-video=(\d+)"""".r
-    val olderPattern = """href="/videos/c_dans_lair_,(\d+).html"""".r
-    
-    val latest = latestPattern.findFirstMatchIn(html).map(_.group(1)).get // there has to be a latest!
-    val olderOnes = olderPattern.findAllMatchIn(html).map(_.group(1)).toList
-    (olderOnes :+ latest).map(s => EpisodeId(s))
+    // <a href="//www.france.tv/france-5/c-dans-l-air/137347-emission-du-vendredi-12-mai-2017.html"
+    //     title="C dans l&#039;air"
+    //     class="c_black link-all"
+    //     data-link="player"
+    //     data-video="157542289"
+    //     data-video-content="137347">
+    val pattern = """data-video="(\d+)"""".r
+
+    val all = pattern.findAllMatchIn(html).map(_.group(1)).toList
+    all.map(s => EpisodeId(s))
   }
-  
+
 }
